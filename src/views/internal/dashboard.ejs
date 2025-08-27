@@ -1,0 +1,66 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h1 class="mb-0">Internal Admin Dashboard</h1>
+    <span class="badge bg-primary text-uppercase">Internal Admin</span>
+  </div>
+  <p class="text-muted">Client ID: <strong><?= user.client_id ?></strong></p>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm"><div class="card-body">
+        <h6 class="text-muted mb-1">Total Users</h6>
+        <div class="display-6"><?= stats.users ?></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm"><div class="card-body">
+        <h6 class="text-muted mb-1">Managers</h6>
+        <div class="display-6"><?= stats.managers ?></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm"><div class="card-body">
+        <h6 class="text-muted mb-1">Employees</h6>
+        <div class="display-6"><?= stats.employees ?></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold">Create Manager</div>
+        <div class="card-body">
+          <form id="createManagerForm" class="vstack gap-2">
+            <input class="form-control" name="email" type="email" placeholder="Email" required>
+            <input class="form-control" name="password" type="password" placeholder="Password" required>
+            <input class="form-control" name="username" placeholder="Username (optional)">
+            <input class="form-control" name="first_name" placeholder="First name (optional)">
+            <input class="form-control" name="last_name" placeholder="Last name (optional)">
+            <button class="btn btn-warning mt-2" type="submit">Create Manager</button>
+          </form>
+          <div id="managerMsg" class="mt-2 small"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold">Create Employee</div>
+        <div class="card-body">
+          <form id="createEmployeeForm" class="vstack gap-2">
+            <input class="form-control" name="email" type="email" placeholder="Email" required>
+            <input class="form-control" name="password" type="password" placeholder="Password" required>
+            <input class="form-control" name="username" placeholder="Username (optional)">
+            <input class="form-control" name="first_name" placeholder="First name (optional)">
+            <input class="form-control" name="last_name" placeholder="Last name (optional)">
+            <button class="btn btn-dark mt-2" type="submit">Create Employee</button>
+          </form>
+          <div id="employeeMsg" class="mt-2 small"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/js/internal.js"></script>

@@ -1,0 +1,107 @@
+/* Custom Responsive Bootstrap Width Utilities
+  -------------------------------------------
+  Add this code to your custom CSS file and link it in your HTML 
+  AFTER the main Bootstrap CSS file.
+
+  Usage:
+  - .w-[value]         (for xs and up)
+  - .w-sm-[value]      (for sm and up)
+  - .w-md-[value]      (for md and up)
+  - .w-lg-[value]      (for lg and up)
+  - .w-xl-[value]      (for xl and up)
+  - .w-xxl-[value]     (for xxl and up)
+
+  Example: <div class="w-100 w-md-50 w-lg-30"></div>
+  This div will be 100% wide on small screens, 50% wide on medium screens 
+  and up, and 30% wide on large screens and up.
+*/
+
+/* Default (xs) widths */
+.w-10 { width: 10% !important; }
+.w-20 { width: 20% !important; }
+.w-30 { width: 30% !important; }
+.w-40 { width: 40% !important; }
+.w-60 { width: 60% !important; }
+.w-70 { width: 70% !important; }
+.w-80 { width: 80% !important; }
+.w-90 { width: 90% !important; }
+
+/* Small devices (sm, 576px and up) */
+@media (min-width: 576px) {
+  .w-sm-10 { width: 10% !important; }
+  .w-sm-20 { width: 20% !important; }
+  .w-sm-25 { width: 25% !important; }
+  .w-sm-30 { width: 30% !important; }
+  .w-sm-40 { width: 40% !important; }
+  .w-sm-50 { width: 50% !important; }
+  .w-sm-60 { width: 60% !important; }
+  .w-sm-70 { width: 70% !important; }
+  .w-sm-75 { width: 75% !important; }
+  .w-sm-80 { width: 80% !important; }
+  .w-sm-90 { width: 90% !important; }
+  .w-sm-100 { width: 100% !important; }
+}
+
+/* Medium devices (md, 768px and up) */
+@media (min-width: 768px) {
+  .w-md-10 { width: 10% !important; }
+  .w-md-20 { width: 20% !important; }
+  .w-md-25 { width: 25% !important; }
+  .w-md-30 { width: 30% !important; }
+  .w-md-40 { width: 40% !important; }
+  .w-md-50 { width: 50% !important; }
+  .w-md-60 { width: 60% !important; }
+  .w-md-70 { width: 70% !important; }
+  .w-md-75 { width: 75% !important; }
+  .w-md-80 { width: 80% !important; }
+  .w-md-90 { width: 90% !important; }
+  .w-md-100 { width: 100% !important; }
+}
+
+/* Large devices (lg, 992px and up) */
+@media (min-width: 992px) {
+  .w-lg-10 { width: 10% !important; }
+  .w-lg-20 { width: 20% !important; }
+  .w-lg-25 { width: 25% !important; }
+  .w-lg-30 { width: 30% !important; }
+  .w-lg-40 { width: 40% !important; }
+  .w-lg-50 { width: 50% !important; }
+  .w-lg-60 { width: 60% !important; }
+  .w-lg-70 { width: 70% !important; }
+  .w-lg-75 { width: 75% !important; }
+  .w-lg-80 { width: 80% !important; }
+  .w-lg-90 { width: 90% !important; }
+  .w-lg-100 { width: 100% !important; }
+}
+
+/* Extra large devices (xl, 1200px and up) */
+@media (min-width: 1200px) {
+  .w-xl-10 { width: 10% !important; }
+  .w-xl-20 { width: 20% !important; }
+  .w-xl-25 { width: 25% !important; }
+  .w-xl-30 { width: 30% !important; }
+  .w-xl-40 { width: 40% !important; }
+  .w-xl-50 { width: 50% !important; }
+  .w-xl-60 { width: 60% !important; }
+  .w-xl-70 { width: 70% !important; }
+  .w-xl-75 { width: 75% !important; }
+  .w-xl-80 { width: 80% !important; }
+  .w-xl-90 { width: 90% !important; }
+  .w-xl-100 { width: 100% !important; }
+}
+
+/* Extra extra large devices (xxl, 1400px and up) */
+@media (min-width: 1400px) {
+  .w-xxl-10 { width: 10% !important; }
+  .w-xxl-20 { width: 20% !important; }
+  .w-xxl-25 { width: 25% !important; }
+  .w-xxl-30 { width: 30% !important; }
+  .w-xxl-40 { width: 40% !important; }
+  .w-xxl-50 { width: 50% !important; }
+  .w-xxl-60 { width: 60% !important; }
+  .w-xxl-70 { width: 70% !important; }
+  .w-xxl-75 { width: 75% !important; }
+  .w-xxl-80 { width: 80% !important; }
+  .w-xxl-90 { width: 90% !important; }
+  .w-xxl-100 { width: 100% !important; }
+}

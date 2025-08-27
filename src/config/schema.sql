@@ -12,26 +12,45 @@ FLUSH PRIVILEGES;
 CREATE TABLE `clients` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
-    `contact_email` VARCHAR(150),
-    `contact_phone` VARCHAR(20),
+    `email` VARCHAR(150),
+    `phone` VARCHAR(20),
+    `address` TEXT,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================================
 -- USERS (both your team + client team + super admin)
 CREATE TABLE `users` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `client_id` INT NULL,  -- NULL for super admin, else belongs to client
-    `manager_id` INT NULL,
-    `username` VARCHAR(100) NULL UNIQUE,
-    `password_hash` VARCHAR(255) NOT NULL,
-    `role` ENUM('super_admin','admin','manager','employee') NOT NULL,
-    `email` VARCHAR(150) NOT NULL UNIQUE,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`) ON DELETE CASCADE,
-    FOREIGN KEY (`manager_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
-);
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `client_id` INT NULL,
+  `username` VARCHAR(100) NULL,
+  `email` VARCHAR(150) NOT NULL UNIQUE,
+  `password_hash` VARCHAR(255) NOT NULL,
+  `role` ENUM('super_admin','admin','manager','employee') NOT NULL,
+  `admin_type` ENUM('internal','client') NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_users_client FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+
+  CONSTRAINT chk_admin_type_role CHECK (
+    (role = 'admin'  AND admin_type IN ('internal','client')) OR
+    (role <> 'admin' AND admin_type IS NULL)
+  )
+) ;
+
 -- ALTER TABLE tasknexus.`users` MODIFY `username` VARCHAR(100) NULL UNIQUE;
+
+ALTER TABLE `users`
+  ADD COLUMN `admin_type` ENUM('internal','client') NULL AFTER `role`;
+
+ALTER TABLE `users`
+  ADD CONSTRAINT chk_admin_type_role
+  CHECK (
+    (role = 'admin'  AND admin_type IN ('internal','client')) OR
+    (role <> 'admin' AND admin_type IS NULL)
+  );
 
 INSERT INTO `users` 
 (`username`, `password_hash`, `role`, `email`) 

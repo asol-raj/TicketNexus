@@ -1,0 +1,115 @@
+
+/* Custom Bootstrap Background Color Utilities
+  ---------------------------------------------
+  A collection of 50 trending and modern background colors.
+  Add this to your custom CSS file.
+
+  Usage:
+  - <div class="bg-cherry-red"></div>
+  - <div class="bg-ethereal-blue"></div>
+  - etc.
+*/
+
+/* Reds & Pinks */
+.bg-cherry-red { background-color: #D2042D !important; }
+.bg-fiery-red { background-color: #EF4444 !important; }
+.bg-burnt-coral { background-color: #E9897E !important; }
+.bg-peachy-keen { background-color: #FFDAB9 !important; }
+.bg-soft-pink { background-color: #FBCFE8 !important; }
+.bg-dusty-rose { background-color: #C29591 !important; }
+.bg-hot-pink { background-color: #F16775 !important; }
+.bg-black-cherry { background-color: #301008 !important; }
+
+/* Oranges & Yellows */
+.bg-burnt-orange { background-color: #CC5500 !important; }
+.bg-hot-orange { background-color: #F97316 !important; }
+.bg-apricot-crush { background-color: #F5A623 !important; }
+.bg-marigold { background-color: #FBBF24 !important; }
+.bg-butter-yellow { background-color: #FDFD96 !important; }
+.bg-lemon-zest { background-color: #FFF44F !important; }
+.bg-warm-gold { background-color: #D4AF37 !important; }
+.bg-mustard-seed { background-color: #FFDB58 !important; }
+
+/* Greens */
+.bg-dill-green { background-color: #6F7463 !important; }
+.bg-pistachio { background-color: #B6C48E !important; }
+.bg-muted-green { background-color: #B6C199 !important; }
+.bg-emerald-green { background-color: #10B981 !important; }
+.bg-lime-green { background-color: #32CD32 !important; }
+.bg-forest-green { background-color: #228B22 !important; }
+.bg-teal { background-color: #008080 !important; }
+.bg-mint-cream { background-color: #F5FFFA !important; }
+
+/* Blues */
+.bg-ethereal-blue { background-color: #A7C7E7 !important; }
+.bg-electric-blue { background-color: #373E98 !important; }
+.bg-digital-denim { background-color: #3B5998 !important; }
+.bg-midnight-blue { background-color: #112D4E !important; }
+.bg-sky-blue { background-color: #87CEEB !important; }
+.bg-periwinkle { background-color: #CCCCFF !important; }
+.bg-aqua-blue { background-color: #60A5FA !important; }
+.bg-sophisticated-blue { background-color: #1E40AF !important; }
+
+/* Purples */
+.bg-digital-lavender { background-color: #A78BFA !important; }
+.bg-aura-indigo { background-color: #4B0082 !important; }
+.bg-soft-lilac { background-color: #F6EBF4 !important; }
+.bg-deep-purple { background-color: #482673 !important; }
+.bg-orchid-purple { background-color: #DA70D6 !important; }
+.bg-neon-purple { background-color: #A855F7 !important; }
+.bg-plum { background-color: #DDA0DD !important; }
+.bg-grape { background-color: #6F2DA8 !important; }
+
+/* Browns & Neutrals */
+.bg-mocha-mousse { background-color: #A47864 !important; }
+.bg-alpine-oat { background-color: #F5F5DC !important; }
+.bg-creamy-white { background-color: #FEFCE8 !important; }
+.bg-moonlit-grey { background-color: #B2BEB5 !important; }
+.bg-dark-charcoal { background-color: #36454F !important; }
+.bg-earthy-brown { background-color: #7C4700 !important; }
+.bg-sandstone { background-color: #D8C3A5 !important; }
+.bg-taupe { background-color: #483C32 !important; }
+.bg-light-gray { background-color: #D1D5DB !important; }
+.bg-off-white { background-color: #FAF9F6 !important; }
+
+
+/* Naural Colors */
+.text-orange { color: orangered !important; }
+.bg-orange { background-color: orangered !important; }
+.bg-light-orange { background-color: rgb(255, 150, 112) !important; }
+
+.text-green { color: green !important; }
+.bg-green { background-color: rgb(39, 169, 39) !important; }
+.bg-light-green { background-color: rgb(120, 195, 120) !important; }
+.text-greenone { color: rgb(27 178 87) !important; };
+
+.text-orchid { color: orchid !important; }
+.bg-orchid { background-color: orchid !important; }
+
+.text-yellow { color: yellow !important; }
+.bg-yellow { background-color: yellow !important; }
+
+.bg-blueviolet { background-color: blueviolet !important; }
+.text-blueviolet { color: blueviolet !important; }
+
+.bg-aquamarine { background-color: aquamarine !important; }
+.bg-burlywood { background-color: burlywood !important; }
+.bg-greenyellow { background-color: greenyellow !important; }
+.bg-mistyrose { background-color: mistyrose !important; }
+.bg-brown { background-color: brown !important; }
+.bg-khaki { background-color: khaki !important; }
+.bg-honeydew { background-color: honeydew !important; }
+.bg-lateblue { background-color: mediumslateblue !important; }
+.bg-lawngreen { background-color: lawngreen !important; }
+.bg-lightskyblue { background-color: lightskyblue !important; }
+.bg-aliceblue { background-color: aliceblue !important; }
+.bg-cornflowerblue { background-color: cornflowerblue !important; }
+.bg-darkorange { background-color: darkorange !important; }
+.bg-darkseagreen { background-color: darkseagreen !important; }
+.bg-deepskyblue { background-color: deepskyblue !important; }
+.bg-cyan { background-color: cyan !important; }
+.bg-lightyellow { background-color: lightyellow !important; }
+
+.textclr { background-color:  #20c997;}
+
+.flash-green { background-color: #dcffa1ff !important; }

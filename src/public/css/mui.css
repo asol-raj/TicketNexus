@@ -1,0 +1,136 @@
+/* --- MUI-Style Form CSS --- */
+/* You can override these variables in your own stylesheet to match your theme. */
+:root {
+    --mui-primary-color: #6200ee;
+    --mui-text-color: #333;
+    --mui-label-color: #888;
+    --mui-border-color: #ccc;
+    --mui-font-family: 'Roboto', sans-serif;
+}
+
+/* --- MUI Form Field Wrapper --- */
+/* This is the main container for each input/label pair. */
+.mui-form-field {
+    position: relative;
+    /* margin-bottom: 2rem; */
+    font-family: var(--mui-font-family);
+}
+
+/* --- Shared Input/Select Styles --- */
+.mui-form-input,
+.mui-form-select {
+    width: 100%;
+    padding: 14px 12px;
+    border: 1px solid var(--mui-border-color);
+    border-radius: 8px;
+    background-color: transparent;
+    font-size: 1rem;
+    color: var(--mui-text-color);
+    outline: none;
+    transition: all 0.2s ease-in-out;
+    box-sizing: border-box;
+}
+
+/* --- Floating Label Styles --- */
+.mui-form-label {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--mui-label-color);
+    pointer-events: none;
+    transition: all 0.2s ease-in-out;
+    /* The background covers the border for the "cutout" effect. */
+    /* IMPORTANT: Ensure this matches your form's background color (e.g., #fff for white). */
+    background-color: #fff; 
+    padding: 0 4px;
+}
+
+/* --- Floating Label Animation --- */
+/* This is the core magic. The label floats up and shrinks when: */
+/* 1. The input is in focus. */
+/* 2. The input has content (its placeholder is NOT being shown). */
+/* 3. The select element is in focus. */
+/* 4. The select element has a valid value selected. */
+.mui-form-input:focus + .mui-form-label,
+.mui-form-input:not(:placeholder-shown) + .mui-form-label,
+.mui-form-select:focus + .mui-form-label,
+.mui-form-select:valid + .mui-form-label {
+    top: 0;
+    transform: translateY(-50%) scale(0.85);
+    color: var(--mui-primary-color);
+    font-weight: 500;
+}
+
+/* To make the :placeholder-shown trick work, a placeholder is needed, */
+/* but we make it invisible so it doesn't clash with our label. */
+.mui-form-input::placeholder {
+    color: transparent;
+}
+
+/* --- Border Animation on Focus --- */
+.mui-form-input:focus,
+.mui-form-select:focus {
+    border-color: var(--mui-primary-color);
+    border-width: 2px;
+    padding: 13px 11px; /* Adjust padding to account for the thicker border */
+}
+
+/* --- Select Specific Styles --- */
+.mui-form-select {
+    /* Hides the default dropdown arrow */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+/* Custom dropdown arrow element */
+.mui-select-arrow {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--mui-label-color);
+    pointer-events: none;
+    transition: all 0.2s ease;
+}
+
+.mui-form-select:focus ~ .mui-select-arrow {
+    border-top-color: var(--mui-primary-color);
+    transform: translateY(-50%) rotate(180deg);
+}
+
+
+/* --- [NEW] Small Size Modifier --- */
+/* Add the .mui-form-field-sm class to the wrapper to make the field smaller. */
+
+.mui-form-field-sm .mui-form-input,
+.mui-form-field-sm .mui-form-select {
+    padding: 10px 10px;
+    font-size: 0.9rem;
+}
+
+.mui-form-field-sm .mui-form-label {
+    font-size: 0.9rem;
+    left: 11px;
+}
+
+/* Adjust floated label for small version */
+.mui-form-field-sm .mui-form-input:focus + .mui-form-label,
+.mui-form-field-sm .mui-form-input:not(:placeholder-shown) + .mui-form-label,
+.mui-form-field-sm .mui-form-select:focus + .mui-form-label,
+.mui-form-field-sm .mui-form-select:valid + .mui-form-label {
+    transform: translateY(-50%) scale(0.8);
+}
+
+/* Adjust padding for small version on focus */
+.mui-form-field-sm .mui-form-input:focus,
+.mui-form-field-sm .mui-form-select:focus {
+    padding: 9px 9px;
+}

@@ -1,0 +1,17 @@
+@media print {
+  .dataTable {
+    overflow: visible !important; /* Ensures all content is visible */
+    max-height: none !important; /* Allows the table to take full height */
+  }
+
+  .text-danger,
+  .text-success,
+  .text-green,
+  .text-orange,
+  .text-white {
+    color: black !important; /* This will make the text color inherit from its parent, effectively removing the red */
+  }
+  /* If you specifically want text-dark color (which is usually black/very dark grey): */
+  /* .text-danger {
+        color: #212529 !important; /* Bootstrap's text-dark color */
+}

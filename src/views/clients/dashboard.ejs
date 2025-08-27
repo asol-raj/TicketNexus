@@ -1,0 +1,23 @@
+<div class="container py-4">
+  <h1 class="mb-2">Welcome, <%= (user && user.username) || user.email %></h1>
+  <p class="text-muted">Role: <span class="badge bg-secondary text-uppercase"><%= user.role %></span></p>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Tickets in your client</h6>
+          <div class="display-6"><%= stats.my_tickets %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Users in your client</h6>
+          <div class="display-6"><%= stats.users_in_client %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

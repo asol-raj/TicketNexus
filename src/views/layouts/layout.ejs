@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicketNexus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"> -->
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- === Navbar (insert in layouts/layout.ejs) === -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">TicketNexus</a>
+
+            <div class="d-flex align-items-center gap-3">
+                <? if (typeof user !== 'undefined' && user) { ?>
+                <span class="text-light small">
+                    Welcome,
+                    <strong>
+                        <?=
+              (user.first_name || user.last_name)
+                ? ((user.first_name || '') + ' ' + (user.last_name || '')).trim()
+                : (user.username || user.email)
+            ?>
+                    </strong>
+                </span>
+
+                <span class="badge bg-info text-dark text-uppercase">
+                    <?=
+            user.role === 'admin'
+              ? (user.admin_type === 'internal' ? 'Internal Admin' :
+                 (user.admin_type === 'client'   ? 'Client Admin'   : 'Admin'))
+              : user.role
+          ?>
+                </span>
+
+                <? if (user.role === 'super_admin') { ?>
+                <a class="btn btn-outline-light btn-sm" href="/admin/logout">Logout</a>
+                <? } else { ?>
+                <a class="btn btn-outline-light btn-sm" href="/auth/logout">Logout</a>
+                <? } ?>
+                <? } ?>
+            </div>
+        </div>
+    </nav>
+
+    <!-- === /Navbar === -->
+
+
+    <?- body ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
