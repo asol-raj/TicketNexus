@@ -9,7 +9,8 @@
       let badgeClass = "bg-secondary";
       if (ticket.status === "open") badgeClass = "bg-info";
       else if (ticket.status === "in_progress") badgeClass = "bg-warning text-dark";
-      else if (ticket.status === "resolved" || ticket.status === "closed") badgeClass = "bg-success";
+      else if (ticket.status === "resolved") badgeClass = "bg-success";
+      else if (ticket.status === "closed") badgeClass = "bg-dark";
     ?>
     <div class="d-flex align-items-center gap-2">
       <span class="badge <?= badgeClass ?> text-uppercase" id="statusBadge">
@@ -18,8 +19,7 @@
       <select id="statusSelect" class="form-select form-select-sm" style="width:auto;">
         <option value="pending" <?=ticket.status==='open' ? 'selected' : '' ?>>Pending</option>
         <option value="in_progress" <?=ticket.status==='in_progress' ? 'selected' : '' ?>>In&nbsp;Progress</option>
-        <option value="resolved" <?=(ticket.status==='closed' ||ticket.status==='resolved' ) ? 'selected' : '' ?>
-          >Resolved</option>
+        <option value="resolved" <?=ticket.status==='closed' ? 'selected' : '' ?>>Resolved</option>
       </select>
       <button class="btn btn-sm btn-outline-primary" id="applyStatus">Update</button>
     </div>
@@ -30,9 +30,11 @@
       <div class="card shadow-sm mb-3">
         <div class="card-header fw-bold">Details</div>
         <div class="card-body">
-          <div class="mb-2"><strong>Priority:</strong> <span class="text-uppercase">
+          <div class="mb-2">
+            <strong>Priority:</strong> <span class="text-uppercase">
               <?= ticket.priority ?>
-            </span></div>
+            </span>
+          </div>
           <div class="d-flex justify-content-between align-items-center gap-5">
             <div class="mb-2"><strong>Raised by:</strong>
               <?= ticket.raised_by_label ?>
@@ -48,6 +50,7 @@
               <?= new Date(ticket.due_at).toLocaleString() ?>
             </div>
           </div>
+          <div class="d-flex justify-content-start align-items-center gap-5"></div>
           <? } ?>
         </div>
       </div>
@@ -92,7 +95,6 @@
       </div>
     </div>
 
-    <!-- Right: comments -->
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm">
         <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -147,11 +149,11 @@
         <h5 class="modal-title">Add Attachments to Ticket #
           <?= ticket.id ?>
         </h5>
-        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <input class="form-control" type="file" name="attachments" multiple required>
-        <div class="form-text">You can upload multiple files.</div>
+        <input class="form-control" type="file" name="attachments" id="attachmentsInput" multiple required>
+        <div class="form-text">You can upload multiple files (images, PDFs, etc.).</div>
       </div>
       <div class="modal-footer">
         <div id="addAttMsg" class="me-auto small"></div>
@@ -162,6 +164,7 @@
   </div>
 </div>
 
+<!-- Edit Comment Modal -->
 <div class="modal fade" id="editCommentModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form class="modal-content" id="editCommentForm">
@@ -181,5 +184,4 @@
   </div>
 </div>
 
-
-<script type="module" src="/js/ticket.js"></script>
+<script type="module" src="/js/internal-ticket.js"></script>

@@ -16,11 +16,12 @@ router.get("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.listTic
 router.post("/managers", requireJWT, requireClientAdmin, ctrl.createManager);
 router.post("/tickets", requireJWT, requireClientAdmin, ctrl.attachmentsMiddleware(), ctrl.createTicket);
 router.post("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.createTicketComment);
-router.post(
-  "/tickets/:id/attachments",
+router.put("/tickets/:id/comments/:commentId", requireJWT, requireClientAdmin, ctrl.updateTicketComment); // NEW
+router.post("/tickets/:id/attachments",
   requireJWT, requireClientAdmin,
   ctrl.attachmentsMiddleware(),
   ctrl.addTicketAttachments
 );
+router.put("/tickets/:id/status", requireJWT, requireClientAdmin, ctrl.updateTicketStatus); // NEW
 
 module.exports = router;

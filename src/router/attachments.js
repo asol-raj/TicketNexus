@@ -11,7 +11,9 @@ router.use(passport.authenticate("jwt", { session: false, failWithError: false }
 });
 
 function requireSameClientUser(req, res, next) {
-  if (req.user && req.user.client_id) return next();
+  if (!req.user) return res.status(403).send("Forbidden");
+  if (req.user.client_id) return next(); // client users
+  if (req.user.role === "admin" && req.user.admin_type === "internal") return next(); // internal admin
   return res.status(403).send("Forbidden");
 }
 

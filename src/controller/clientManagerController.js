@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
     const ts = Date.now();
-    const safe = file.originalname.replace(/[^\w.\-]+/g, "_");
+    const safe = (file.originalname || "file").replace(/[^\w.\-]+/g, "_");
     cb(null, `${ts}_${safe}`);
   },
 });
@@ -169,7 +169,7 @@ async function resetEmployeePassword(req, res) {
   }
 }
 
-// ---------- Ticket creation (unchanged) ----------
+// ---------- Ticket creation (kept) ----------
 function attachmentsMiddlewareExports() { return attachmentsMiddleware(); }
 async function createTicket(req, res) {
   const u = req.user;
@@ -212,7 +212,7 @@ async function createTicket(req, res) {
   }
 }
 
-// ---------- Ticket page + comments (reuse as before) ----------
+// ---------- Ticket page (now renders clientmanager/ticket) ----------
 async function ticketPage(req, res) {
   const clientId = req.user.client_id;
   const ticketId = Number(req.params.id);
@@ -244,12 +244,12 @@ async function ticketPage(req, res) {
     );
     const imageExt = new Set([".jpg",".jpeg",".png",".gif",".webp",".svg"]);
     const attachments = (attachmentsRaw || []).map(a => {
-      const ext = path.extname(a.file_path).toLowerCase();
+      const ext = path.extname(a.file_path || "").toLowerCase();
       return { ...a, is_image: imageExt.has(ext) };
     });
 
     const [comments] = await pool.query(
-      `SELECT c.id, c.comment AS content, c.created_at,
+      `SELECT c.id, c.comment AS content, c.created_at, c.user_id AS author_id,
               COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS author_label
          FROM ticket_comments c
          JOIN users u ON u.id = c.user_id
@@ -259,7 +259,7 @@ async function ticketPage(req, res) {
       [ticketId]
     );
 
-    res.render("clientadmin/ticket", {
+    res.render("clientmanager/ticket", {
       title: `Ticket #${t.id}`,
       user: req.user,
       ticket: t,
@@ -272,13 +272,14 @@ async function ticketPage(req, res) {
   }
 }
 
+// ---------- Ticket comments ----------
 async function listTicketComments(req, res) {
   const clientId = req.user.client_id;
   const ticketId = Number(req.params.id);
   const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [ticketId, clientId]);
   if (!tk) return res.status(404).json({ success: false, error: "Not found" });
   const [comments] = await pool.query(
-    `SELECT c.id, c.comment AS content, c.created_at,
+    `SELECT c.id, c.comment AS content, c.created_at, c.user_id AS author_id,
             COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS author_label
        FROM ticket_comments c
        JOIN users u ON u.id = c.user_id
@@ -298,12 +299,56 @@ async function createTicketComment(req, res) {
   const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [ticketId, clientId]);
   if (!tk) return res.status(404).json({ success: false, error: "Not found" });
   const [r] = await pool.query(
-    "INSERT INTO ticket_comments (ticket_id, user_id, comment) VALUES (?,?,?)",
+    "INSERT INTO ticket_comments (ticket_id, user_id, comment, created_at) VALUES (?,?,?,NOW())",
     [ticketId, req.user.id, content.trim()]
   );
-  res.json({ success: true, comment_id: r.insertId });
+
+  // return fully-hydrated comment
+  const [[comment]] = await pool.query(
+    `SELECT c.id, c.comment AS content, c.created_at, c.user_id AS author_id,
+            COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS author_label
+       FROM ticket_comments c
+       JOIN users u ON u.id = c.user_id
+  LEFT JOIN employees e ON e.user_id = u.id
+      WHERE c.id=?`,
+    [r.insertId]
+  );
+  res.json({ success: true, comment });
 }
 
+// Edit existing comment (author-only)
+async function updateTicketComment(req, res) {
+  const clientId = req.user.client_id;
+  const ticketId = Number(req.params.id);
+  const commentId = Number(req.params.commentId);
+  const { content } = req.body || {};
+  if (!content || !content.trim()) return res.status(400).json({ success:false, error:"Content required" });
+
+  const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [ticketId, clientId]);
+  if (!tk) return res.status(404).json({ success:false, error:"Not found" });
+
+  const [[row]] = await pool.query(
+    "SELECT id, user_id FROM ticket_comments WHERE id=? AND ticket_id=? LIMIT 1",
+    [commentId, ticketId]
+  );
+  if (!row) return res.status(404).json({ success:false, error:"Comment not found" });
+  if (row.user_id !== req.user.id) return res.status(403).json({ success:false, error:"You can edit only your own comment" });
+
+  await pool.query("UPDATE ticket_comments SET comment=?, updated_at=NOW() WHERE id=?", [content.trim(), commentId]);
+
+  const [[comment]] = await pool.query(
+    `SELECT c.id, c.comment AS content, c.created_at, c.user_id AS author_id,
+            COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS author_label
+       FROM ticket_comments c
+       JOIN users u ON u.id = c.user_id
+  LEFT JOIN employees e ON e.user_id = u.id
+      WHERE c.id=?`,
+    [commentId]
+  );
+  res.json({ success:true, comment });
+}
+
+// ---------- Attachments ----------
 async function addTicketAttachments(req, res) {
   const clientId = req.user.client_id;
   const ticketId = Number(req.params.id);
@@ -325,6 +370,20 @@ async function addTicketAttachments(req, res) {
   res.json({ success:true, attachments: inserted });
 }
 
+// ---------- Status update ----------
+async function updateTicketStatus(req, res) {
+  const clientId = req.user.client_id;
+  const id = Number(req.params.id);
+  const map = { pending: "open", in_progress: "in_progress", resolved: "closed" };
+  const dbStatus = map[(req.body?.status || "").toLowerCase()] || "open";
+
+  const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [id, clientId]);
+  if (!tk) return res.status(404).json({ success:false, error:"Not found" });
+
+  await pool.query("UPDATE tickets SET status=?, updated_at=NOW() WHERE id=?", [dbStatus, id]);
+  res.json({ success:true, status: dbStatus });
+}
+
 module.exports = {
   attachmentsMiddleware: attachmentsMiddlewareExports,
   dashboard,
@@ -337,5 +396,7 @@ module.exports = {
   ticketPage,
   listTicketComments,
   createTicketComment,
+  updateTicketComment,   // NEW
   addTicketAttachments,
+  updateTicketStatus     // NEW
 };

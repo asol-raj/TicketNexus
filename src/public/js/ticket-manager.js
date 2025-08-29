@@ -1,5 +1,4 @@
-// src/public/js/ticket.js
-
+// src/public/js/ticket-manager.js
 document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("ticketPage");
   if (!root) return;
@@ -8,19 +7,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const USER_ID   = root.dataset.userId;
 
   const q = (s) => document.querySelector(s);
-
-  const esc = (s) =>
-    String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
+  const esc = (s) => String(s)
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">", "&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#39;");
 
   // ===== Status update =====
   q("#applyStatus")?.addEventListener("click", async () => {
     const val = q("#statusSelect").value;
-    const res = await fetch(`/client-admin/tickets/${TICKET_ID}/status`, {
+    const res = await fetch(`/client-manager/tickets/${TICKET_ID}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({ status: val })
@@ -37,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const contentEl = q("#commentContent");
     const content = contentEl.value;
 
-    const res = await fetch(`/client-admin/tickets/${TICKET_ID}/comments`, {
+    const res = await fetch(`/client-manager/tickets/${TICKET_ID}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({ content })
@@ -92,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     msg.textContent = "Saving...";
     try {
       const content = q("#editCommentTextarea").value;
-      const res = await fetch(`/client-admin/tickets/${TICKET_ID}/comments/${editingCommentId}`, {
+      const res = await fetch(`/client-manager/tickets/${TICKET_ID}/comments/${editingCommentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ content })
@@ -121,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (msg) msg.textContent = "Uploading...";
     const fd = new FormData(form);
     try {
-      const res = await fetch(`/client-admin/tickets/${TICKET_ID}/attachments`, { method: "POST", body: fd });
+      const res = await fetch(`/client-manager/tickets/${TICKET_ID}/attachments`, { method: "POST", body: fd });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || j.success === false) throw new Error(j.error || "Upload failed");
 
@@ -159,32 +153,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== Delete attachment (author-only; server enforces as well) =====
-document.getElementById("attachmentGrid")?.addEventListener("click", async (e) => {
-  const btn = e.target.closest(".delete-attachment");
-  if (!btn) return;
-  const id = btn.dataset.id;
-  if (!id) return;
-  if (!confirm("Delete this attachment?")) return;
+  // ===== Delete attachment =====
+  document.getElementById("attachmentGrid")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".delete-attachment");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    if (!confirm("Delete this attachment?")) return;
 
-  try {
-    const res = await fetch(`/attachments/${id}`, { method: "DELETE", headers: { "Accept": "application/json" } });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
+    try {
+      const res = await fetch(`/attachments/${id}`, { method: "DELETE", headers: { "Accept": "application/json" } });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
 
-    const item = btn.closest(".attachment-item");
-    const grid = document.getElementById("attachmentGrid");
-    item?.remove();
+      const item = btn.closest(".attachment-item");
+      const grid = document.getElementById("attachmentGrid");
+      item?.remove();
 
-    if (grid && !grid.querySelector(".attachment-item")) {
-      const empty = document.createElement("div");
-      empty.className = "text-muted";
-      empty.textContent = "No attachments.";
-      grid.parentElement?.appendChild(empty);
+      if (grid && !grid.querySelector(".attachment-item")) {
+        const empty = document.createElement("div");
+        empty.className = "text-muted";
+        empty.textContent = "No attachments.";
+        grid.parentElement?.appendChild(empty);
+      }
+    } catch (err) {
+      alert(err.message || "Delete failed");
     }
-  } catch (err) {
-    alert(err.message || "Delete failed");
-  }
-});
+  });
 
 });

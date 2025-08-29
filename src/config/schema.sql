@@ -125,11 +125,14 @@ CREATE TABLE `tickets` (
     `resolved_at` DATETIME NULL,
     `sla_status` ENUM('within_sla','breached') DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`),
     FOREIGN KEY (`raised_by`) REFERENCES `users`(`id`),
     FOREIGN KEY (`assigned_to`) REFERENCES `employees`(`id`),
     FOREIGN KEY (`sla_policy_id`) REFERENCES `sla_policies`(`id`)
 );
+
+-- ALTER TABLE tickets ADD COLUMN `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
 -- =========================================
 -- TICKET ATTACHMENTS (images, files)
@@ -194,12 +197,13 @@ CREATE TABLE `ticket_comments` (
     `user_id` INT NOT NULL,
     `comment` TEXT NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
 );
 RENAME TABLE comments TO `ticket_comments`;
-
+ALTER TABLE `ticket_comments` ADD COLUMN `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 -- =========================================
 -- FEEDBACK (client rates resolved tickets)
 CREATE TABLE `feedback` (

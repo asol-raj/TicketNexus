@@ -21,4 +21,25 @@ router.put("/tickets/:id/assign", requireJWT, requireInternalAdmin, internal.ass
 router.post("/managers", requireJWT, requireInternalAdmin, require("../controller/internalController").createManager);
 router.post("/employees", requireJWT, requireInternalAdmin, require("../controller/internalController").createEmployee);
 
+// Ticket detail page
+router.get("/tickets/:id", requireJWT, requireInternalAdmin, internal.ticketPage);
+
+// Ticket data
+router.get("/tickets/:id/comments", requireJWT, requireInternalAdmin, internal.listTicketComments);
+
+// Actions
+router.post("/tickets/:id/comments", requireJWT, requireInternalAdmin, internal.createTicketComment);
+router.post(
+    "/tickets/:id/attachments",
+    requireJWT,
+    requireInternalAdmin,
+    internal.attachmentsMiddleware(),
+    internal.addTicketAttachments
+);
+router.put("/tickets/:id/status", requireJWT, requireInternalAdmin, internal.updateTicketStatus);
+
+// Edit an existing comment (author-only)
+router.put("/tickets/:id/comments/:commentId", requireJWT, requireInternalAdmin, internal.updateTicketComment);
+
+
 module.exports = router;

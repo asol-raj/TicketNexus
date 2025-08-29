@@ -1,14 +1,15 @@
-// src/public/js/ticket.js
+// src/public/js/internal-ticket.js
 
 document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("ticketPage");
   if (!root) return;
 
-  const TICKET_ID = root.dataset.ticketId;
+  const TICKET_ID = root.dataset.ticketId; // from <div id="ticketPage" data-ticket-id="..." data-user-id="...">
   const USER_ID   = root.dataset.userId;
 
-  const q = (s) => document.querySelector(s);
+  const q  = (s) => document.querySelector(s);
 
+  // Simple HTML escape (defensive)
   const esc = (s) =>
     String(s)
       .replaceAll("&", "&amp;")
@@ -20,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== Status update =====
   q("#applyStatus")?.addEventListener("click", async () => {
     const val = q("#statusSelect").value;
-    const res = await fetch(`/client-admin/tickets/${TICKET_ID}/status`, {
+    const res = await fetch(`/internal/tickets/${TICKET_ID}/status`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({ status: val })
@@ -30,14 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
     q("#statusBadge").textContent = j.status;
   });
 
-  // ===== Create new comment (server-identical markup) =====
+  // ===== Create new comment (render EXACT template) =====
   q("#commentForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const list = q("#commentList");
     const contentEl = q("#commentContent");
     const content = contentEl.value;
 
-    const res = await fetch(`/client-admin/tickets/${TICKET_ID}/comments`, {
+    const res = await fetch(`/internal/tickets/${TICKET_ID}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({ content })
@@ -65,14 +66,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (list) {
       if (list.children.length === 1 && list.firstElementChild.classList.contains("text-muted")) {
-        list.innerHTML = "";
+        list.innerHTML = ""; // remove "No updates yet."
       }
       list.prepend(wrap);
     }
     e.target.reset();
   });
 
-  // ===== Edit comment (author-only) =====
+  // ===== Edit comment (author-only; server enforces) =====
   let editingCommentId = null;
 
   q("#commentList")?.addEventListener("click", (e) => {
@@ -83,7 +84,8 @@ document.addEventListener("DOMContentLoaded", () => {
     editingCommentId = Number(wrap.dataset.commentId);
     const text = wrap.querySelector(".comment-content")?.textContent || "";
     q("#editCommentTextarea").value = text;
-    new bootstrap.Modal(document.getElementById("editCommentModal")).show();
+    const modal = new bootstrap.Modal(document.getElementById("editCommentModal"));
+    modal.show();
   });
 
   q("#editCommentForm")?.addEventListener("submit", async (e) => {
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     msg.textContent = "Saving...";
     try {
       const content = q("#editCommentTextarea").value;
-      const res = await fetch(`/client-admin/tickets/${TICKET_ID}/comments/${editingCommentId}`, {
+      const res = await fetch(`/internal/tickets/${TICKET_ID}/comments/${editingCommentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ content })
@@ -112,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== Add attachments =====
+  // ===== Add attachments (modal form) =====
   const form = document.getElementById("addAttachmentsForm");
   const msg  = document.getElementById("addAttMsg");
 
@@ -121,7 +123,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (msg) msg.textContent = "Uploading...";
     const fd = new FormData(form);
     try {
-      const res = await fetch(`/client-admin/tickets/${TICKET_ID}/attachments`, { method: "POST", body: fd });
+      const res = await fetch(`/internal/tickets/${TICKET_ID}/attachments`, {
+        method: "POST",
+        body: fd
+      });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || j.success === false) throw new Error(j.error || "Upload failed");
 
@@ -143,11 +148,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`
             }
           </div>`;
-        // remove "No attachments" placeholder if present
-        if (!grid) return;
-        const placeholder = grid.previousElementSibling;
-        if (placeholder && placeholder.classList?.contains("text-muted")) placeholder.remove();
-        grid.prepend(col);
+        // remove "No attachments" placeholder
+        if (grid && grid.previousElementSibling?.classList.contains("text-muted")) {
+          grid.previousElementSibling.remove();
+        }
+        grid?.prepend(col);
       });
 
       if (msg) msg.textContent = "Uploaded.";
@@ -172,10 +177,12 @@ document.getElementById("attachmentGrid")?.addEventListener("click", async (e) =
     const j = await res.json().catch(() => ({}));
     if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
 
+    // Remove from DOM
     const item = btn.closest(".attachment-item");
     const grid = document.getElementById("attachmentGrid");
     item?.remove();
 
+    // If none left, show placeholder
     if (grid && !grid.querySelector(".attachment-item")) {
       const empty = document.createElement("div");
       empty.className = "text-muted";

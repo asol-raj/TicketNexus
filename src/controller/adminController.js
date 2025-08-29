@@ -40,21 +40,77 @@ async function createUser({ client_id, username = null, email, password, role, a
 // GET /admin (dashboard render)
 async function dashboard(req, res) {
   try {
+    // Clients & users
     const [[{ total_clients = 0 } = {}]] =
       await pool.query("SELECT COUNT(*) AS total_clients FROM clients");
+
     const [[{ total_users = 0 } = {}]] =
       await pool.query("SELECT COUNT(*) AS total_users FROM users");
 
+    // Admin splits (from users)
+    const [[admins = {}]] = await pool.query(`
+      SELECT
+        SUM(CASE WHEN role='admin' AND admin_type='internal' THEN 1 ELSE 0 END) AS internal_admins,
+        SUM(CASE WHEN role='admin' AND admin_type='client'   THEN 1 ELSE 0 END) AS client_admins
+      FROM users
+    `);
+
+    // Managers/Employees by employment_type (from employees + users)
+    const [[staff = {}]] = await pool.query(`
+      SELECT
+        SUM(CASE WHEN u.role='manager'  AND e.employment_type='internal' THEN 1 ELSE 0 END) AS internal_managers,
+        SUM(CASE WHEN u.role='employee' AND e.employment_type='internal' THEN 1 ELSE 0 END) AS internal_employees,
+        SUM(CASE WHEN u.role='manager'  AND e.employment_type='client'   THEN 1 ELSE 0 END) AS client_managers,
+        SUM(CASE WHEN u.role='employee' AND e.employment_type='client'   THEN 1 ELSE 0 END) AS client_employees
+      FROM users u
+      LEFT JOIN employees e ON e.user_id = u.id
+    `);
+
+    // Tickets
+    const [[tickets = {}]] = await pool.query(`
+      SELECT
+        SUM(CASE WHEN status='open'   THEN 1 ELSE 0 END) AS open_tickets,
+        SUM(CASE WHEN status='closed' THEN 1 ELSE 0 END) AS closed_tickets
+      FROM tickets
+    `);
+
+    const internal_admins = Number(admins.internal_admins) || 0;
+    const internal_managers = Number(staff.internal_managers) || 0;
+    const internal_employees = Number(staff.internal_employees) || 0;
+    const client_admins = Number(admins.client_admins) || 0;
+    const client_managers = Number(staff.client_managers) || 0;
+    const client_employees = Number(staff.client_employees) || 0;
+
+    const internal_total =
+      (internal_admins || 0) + (internal_managers || 0) + (internal_employees || 0);
+
+    const external_total =
+      (client_admins || 0) + (client_managers || 0) + (client_employees || 0);
+
     res.render("superadmin/dashboard", {
       title: "Super Admin Dashboard",
-      stats: { total_clients, total_users },
-      user: req.session.auth, // unified session
+      user: req.session.auth,
+      stats: {
+        total_clients,
+        total_users,
+        internal_admins: internal_admins || 0,
+        internal_managers: internal_managers || 0,
+        internal_employees: internal_employees || 0,
+        internal_total,
+        client_admins: admins.client_admins || 0,
+        client_managers: client_managers || 0,
+        client_employees: client_employees || 0,
+        external_total,
+        open_tickets: tickets.open_tickets || 0,
+        closed_tickets: tickets.closed_tickets || 0,
+      },
     });
   } catch (err) {
     console.error("dashboard error:", err);
     res.status(500).send("Server error");
   }
 }
+
 
 // GET /admin/clients (JSON for selects)
 async function listClients(req, res) {

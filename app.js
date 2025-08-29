@@ -43,19 +43,6 @@ app.set("views", path.join(__dirname, "src", "views"));
 app.use(expressLayouts);
 app.set("layout", "layouts/layout");
 
-// app.use(
-//   "/uploads",
-//   express.static(path.join(process.cwd(), "uploads"), {
-//     fallthrough: false,
-//     setHeaders: (res, filePath) => {
-//       // Be explicit for PDFs; browsers will display them inline
-//       if (path.extname(filePath).toLowerCase() === ".pdf") {
-//         res.setHeader("Content-Type", "application/pdf");
-//         res.setHeader("X-Content-Type-Options", "nosniff");
-//       }
-//     },
-//   })
-// );
 
 // Routes
 app.use("/", require("./src/router/routes"));
