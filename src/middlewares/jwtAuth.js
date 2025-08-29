@@ -21,7 +21,9 @@ passport.use(new JwtStrategy(opts, async (payload, done) => {
   }
 }));
 
-const requireJWT = passport.authenticate("jwt", { session: false });
+function requireJWT(req, res, next) {
+  return passport.authenticate("jwt", { session: false })(req, res, next);
+}
 
 function requireInternalAdmin(req, res, next) {
   const u = req.user;
@@ -30,9 +32,47 @@ function requireInternalAdmin(req, res, next) {
 }
 
 function requireClientAdmin(req, res, next) {
-  const u = req.user;
-  if (u && u.role === "admin" && u.admin_type === "client") return next();
+  if (req.user?.role === "admin" && req.user?.admin_type === "client") return next();
   return res.status(403).send("Forbidden");
 }
 
-module.exports = { requireJWT, requireInternalAdmin, requireClientAdmin, passport };
+function requireClientManager(req, res, next) {
+  if (req.user?.role === "manager" && req.user?.employment_type === "client") return next();
+  return res.status(403).send("Forbidden");
+}
+
+function requireInternalManager(req, res, next) {
+  if (req.user?.role === "manager" && req.user?.employment_type === "internal") return next();
+  return res.status(403).send("Forbidden");
+}
+
+function requireClientEmployee(req, res, next) {
+  if (req.user?.role === "employee" && req.user?.employment_type === "client") return next();
+  return res.status(403).send("Forbidden");
+}
+
+function requireInternalEmployee(req, res, next) {
+  if (req.user?.role === "employee" && req.user?.employment_type === "internal") return next();
+  return res.status(403).send("Forbidden");
+}
+
+
+function requireManager(req, res, next) {
+  const u = req.user;
+  if (u && u.role === "manager") return next();
+  return res.status(403).send("Forbidden");
+}
+
+// module.exports = { requireJWT, requireInternalAdmin, requireClientAdmin, passport, requireManager };
+
+module.exports = {
+  passport,
+  requireJWT,
+  requireManager,
+  requireClientAdmin,
+  requireInternalAdmin,
+  requireClientManager,
+  requireInternalManager,
+  requireClientEmployee,
+  requireInternalEmployee
+};

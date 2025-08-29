@@ -1,18 +1,18 @@
 <div class="container-fluid py-3">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <h1 class="mb-0">Client Admin Dashboard</h1>
+    <h1 class="mb-0">Client Manager Dashboard</h1>
     <div class="d-flex gap-2">
       <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newTicketModal">
         <span style="font-size:1.2rem; line-height:1;">📝</span> New Ticket
       </button>
-      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createManagerModal">
-        <span class="me-1">➕</span> Create Manager
+      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createEmployeeModal">
+        <span class="me-1">➕</span> Create Employee
       </button>
     </div>
   </div>
 
   <div class="row g-3">
-    <!-- Middle: Tickets (live) -->
+    <!-- Middle: Tickets -->
     <div class="col-12 col-lg-8">
       <div class="card shadow-sm h-100">
         <div class="card-header fw-bold d-flex justify-content-between align-items-center">
@@ -38,42 +38,52 @@
                 <th>Due</th>
               </tr>
             </thead>
-            <tbody><!-- filled by JS --></tbody>
+            <tbody><!-- JS --></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- Right: Recent (compact list) -->
+    <!-- Right: Your Team (cards) -->
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm h-100">
         <div class="card-header fw-bold d-flex justify-content-between">
-          <span>Recent Tickets</span>
-          <span class="small text-muted">Total: <?= totals.total_tickets ?></span>
+          <span>Your Team</span>
+          <span class="small text-muted">Client Employees</span>
         </div>
-        <div class="list-group list-group-flush" id="recentList" style="max-height:70vh; overflow:auto;"></div>
+        <div class="card-body">
+          <div id="teamList" class="vstack gap-3">
+            <!-- cards via JS -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Create Manager Modal -->
-<div class="modal fade" id="createManagerModal" tabindex="-1" aria-hidden="true">
+<!-- Create Employee Modal -->
+<div class="modal fade" id="createEmployeeModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" id="createManagerForm">
+    <form class="modal-content" id="createEmployeeForm">
       <div class="modal-header">
-        <h5 class="modal-title">Create Manager</h5>
+        <h5 class="modal-title">Create Client Employee</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body vstack gap-2">
-        <input class="form-control" name="first_name" placeholder="First name (optional)">
-        <input class="form-control" name="last_name" placeholder="Last name (optional)">
+        <div class="row g-2">
+          <div class="col-6"><input class="form-control" name="first_name" placeholder="First name"></div>
+          <div class="col-6"><input class="form-control" name="last_name" placeholder="Last name"></div>
+        </div>
         <input class="form-control" name="username" placeholder="Username (optional)">
         <input class="form-control" name="email" type="email" placeholder="Email" required>
         <input class="form-control" name="password" type="password" placeholder="Password" required>
+        <div>
+          <label class="form-label mb-1">Date of joining</label>
+          <input class="form-control" name="date_of_joining" type="date">
+        </div>
       </div>
       <div class="modal-footer">
-        <div id="managerMsg" class="me-auto small"></div>
+        <div id="empMsg" class="me-auto small"></div>
         <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
         <button class="btn btn-success" type="submit">Create</button>
       </div>
@@ -81,7 +91,7 @@
   </div>
 </div>
 
-<!-- New Ticket Modal -->
+<!-- New Ticket Modal (same as before) -->
 <div class="modal fade" id="newTicketModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <form class="modal-content" id="newTicketForm" enctype="multipart/form-data">
@@ -130,4 +140,4 @@
   </div>
 </div>
 
-<script type="module" src="/js/clientadmin.js"></script>
+<script type="module" src="/js/clientmanager.js"></script>

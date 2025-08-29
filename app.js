@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
+app.use("/attachments", require("./src/router/attachments"));
 
 // Sessions (for SUPER ADMIN only routes we build)
 app.use(
@@ -42,13 +43,30 @@ app.set("views", path.join(__dirname, "src", "views"));
 app.use(expressLayouts);
 app.set("layout", "layouts/layout");
 
+// app.use(
+//   "/uploads",
+//   express.static(path.join(process.cwd(), "uploads"), {
+//     fallthrough: false,
+//     setHeaders: (res, filePath) => {
+//       // Be explicit for PDFs; browsers will display them inline
+//       if (path.extname(filePath).toLowerCase() === ".pdf") {
+//         res.setHeader("Content-Type", "application/pdf");
+//         res.setHeader("X-Content-Type-Options", "nosniff");
+//       }
+//     },
+//   })
+// );
+
 // Routes
 app.use("/", require("./src/router/routes"));
 app.use("/auth", require("./src/router/auth"));
 app.use("/admin", require("./src/router/admin"));
 app.use("/client", require("./src/router/client"));
+app.use("/manager", require("./src/router/manager"));
 app.use("/internal", require("./src/router/internal"));
+app.use("/employee", require("./src/router/employee"));
 app.use("/client-admin", require("./src/router/clientAdmin"));
+app.use("/client-manager", require("./src/router/clientManager"));
 
 
 

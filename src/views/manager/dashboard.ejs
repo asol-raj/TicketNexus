@@ -1,0 +1,159 @@
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Manager Dashboard</h1>
+    <span class="badge bg-secondary text-uppercase">Manager</span>
+  </div>
+
+  <div class="row g-3">
+    <!-- Left: Tickets -->
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold d-flex align-items-center justify-content-between">
+          <span>All Tickets</span>
+          <div class="btn-group btn-group-sm" role="group">
+            <button class="btn btn-outline-primary" id="filterAll">All</button>
+            <button class="btn btn-outline-primary" id="filterUnassigned">Unassigned</button>
+          </div>
+        </div>
+        <div class="list-group list-group-flush" id="ticketList" style="max-height:72vh; overflow:auto;">
+          <? if (tickets && tickets.length) { ?>
+          <? tickets.forEach(t => { ?>
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>#
+                <?= t.id ?> ·
+                <?= t.subject || 'Ticket' ?>
+              </strong>
+              <span class="badge bg-secondary text-uppercase">
+                <?= t.priority || 'n/a' ?>
+              </span>
+            </div>
+            <div class="small text-muted mb-2">
+              Status:
+              <?= t.status || 'n/a' ?> · Assignee:
+              <?= t.assignee_label || 'Unassigned' ?>
+            </div>
+            <div class="d-flex gap-2">
+              <select class="form-select form-select-sm assign-select" data-ticket-id="<?= t.id ?>">
+                <option value="">Assign to…</option>
+                <? teamSelect.forEach(emp => { ?>
+                <option value="<?= emp.employee_id ?>">
+                  <?= emp.label ?>
+                </option>
+                <? }) ?>
+              </select>
+              <button class="btn btn-sm btn-primary do-assign" data-ticket-id="<?= t.id ?>">Assign</button>
+            </div>
+          </div>
+          <? }) ?>
+          <? } else { ?>
+          <div class="list-group-item text-muted">No tickets found.</div>
+          <? } ?>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Team overview -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold d-flex justify-content-between">
+          <span>Your Team</span>
+          <span class="small text-muted">Online window: 10 min</span>
+        </div>
+        <div class="table-responsive" style="max-height:72vh; overflow:auto;">
+          <table class="table table-sm align-middle mb-0" id="teamTable">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Open Tickets</th>
+                <th>Attendance</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <? if (team && team.length) { ?>
+              <? team.forEach(m => { ?>
+              <tr data-employee-id="<?= m.employee_id ?>" data-user-id="<?= m.user_id ?>">
+                <td>
+                  <?= m.name ?>
+                </td>
+                <td>
+                  <?= m.position || '-' ?>
+                </td>
+                <td><span class="badge bg-info">
+                    <?= m.open_assigned ?>
+                  </span></td>
+                <td>
+                  <? if (m.online) { ?>
+                  <span class="badge bg-success">Online</span>
+                  <? } else { ?>
+                  <span class="badge bg-secondary">Offline</span>
+                  <? } ?>
+                </td>
+                <td class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-primary act-edit"
+                    data-employee-id="<?= m.employee_id ?>">Edit</button>
+                  <button class="btn btn-sm btn-outline-danger act-reset" data-employee-id="<?= m.employee_id ?>">Reset
+                    PW</button>
+                </td>
+              </tr>
+              <? }) ?>
+              <? } else { ?>
+              <tr>
+                <td colspan="5" class="text-muted">No team members yet.</td>
+              </tr>
+              <? } ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Profile editor -->
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>Edit Employee Profile</span>
+          <span class="small text-muted" id="pf_hint">Select a team member first</span>
+        </div>
+        <div class="card-body" id="pf_body" style="opacity:.6; pointer-events:none;">
+          <form id="profileForm" class="vstack gap-2">
+            <input type="hidden" name="employee_id" id="pf_employee_id">
+            <div>
+              <label class="form-label">First name</label>
+              <input class="form-control" name="first_name" id="pf_first_name" placeholder="First name">
+            </div>
+            <div>
+              <label class="form-label">Last name</label>
+              <input class="form-control" name="last_name" id="pf_last_name" placeholder="Last name">
+            </div>
+            <div>
+              <label class="form-label">Position</label>
+              <input class="form-control" name="position" id="pf_position" placeholder="Position">
+            </div>
+            <div>
+              <label class="form-label">Date of Joining</label>
+              <input class="form-control" name="date_of_joining" id="pf_doj" type="date">
+            </div>
+            <button class="btn btn-primary btn-sm mt-2" type="submit">Save Profile</button>
+          </form>
+          <div id="profileMsg" class="small mt-2"></div>
+          <hr>
+          <form id="resetPwForm" class="vstack gap-2">
+            <input type="hidden" name="employee_id" id="rp_employee_id">
+            <div>
+              <label class="form-label">New Password</label>
+              <input class="form-control" name="new_password" id="rp_new_password" type="password"
+                placeholder="New password">
+            </div>
+            <button class="btn btn-outline-danger btn-sm mt-2" type="submit">Reset Password</button>
+          </form>
+          <div id="resetMsg" class="small mt-2 text-danger"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/js/manager.js"></script>

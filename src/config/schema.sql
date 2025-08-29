@@ -52,9 +52,9 @@ ALTER TABLE `users`
     (role <> 'admin' AND admin_type IS NULL)
   );
 
-INSERT INTO `users` 
-(`username`, `password_hash`, `role`, `email`) 
-VALUES('super', '$2a$10$tbcxXAbLFbLhdRh8oMZ3me5SKdDdZHCZfM2GsVdOIKxWYHL88sjx.', 'super_admin', 'rshekhar21@gmail.com');
+-- INSERT INTO `users` 
+-- (`username`, `password_hash`, `role`, `email`) 
+-- VALUES('super', '$2a$10$tbcxXAbLFbLhdRh8oMZ3me5SKdDdZHCZfM2GsVdOIKxWYHL88sjx.', 'super_admin', 'rshekhar21@gmail.com');
 
 SELECT * FROM users;
 -- =========================================
@@ -67,9 +67,15 @@ CREATE TABLE `employees` (
     `position` VARCHAR(100),
     `manager_id` INT NULL,
     `date_of_joining` DATE,
+    `employment_type` ENUM('internal','client') NOT NULL DEFAULT 'internal',
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`manager_id`) REFERENCES `employees`(`id`) ON DELETE SET NULL
 );
+
+SELECT * FROM employees;
+
+ALTER TABLE `employees`
+  ADD COLUMN `employment_type` ENUM('internal','client') NOT NULL DEFAULT 'internal';
 
 -- =========================================
 -- SHIFTS (work schedule)
@@ -131,9 +137,16 @@ CREATE TABLE `ticket_attachments` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `ticket_id` INT NOT NULL,
     `file_path` VARCHAR(255) NOT NULL,
+    `uploaded_by` INT NULL,
     `uploaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 );
+
+ALTER TABLE `ticket_attachments`
+  ADD COLUMN `uploaded_by` INT NULL AFTER `file_path`,
+  ADD CONSTRAINT fk_ticket_attachments_uploaded_by
+    FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`) ON DELETE SET NULL;
 
 -- =========================================
 -- TASKS (internal task mgmt for both client teams & your team)
@@ -160,9 +173,21 @@ CREATE TABLE `task_attachments` (
     FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS `ticket_posts` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `ticket_id` INT NOT NULL,
+  `author_user_id` INT NOT NULL,  -- client admin / client manager / internal can also post later
+  `content` TEXT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`author_user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+DROP TABLE IF EXISTS ticket_posts;
+
 -- =========================================
 -- COMMENTS (for tickets or tasks)
-CREATE TABLE `comments` (
+CREATE TABLE `ticket_comments` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `task_id` INT NULL,
     `ticket_id` INT NULL,
@@ -173,6 +198,7 @@ CREATE TABLE `comments` (
     FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
 );
+RENAME TABLE comments TO `ticket_comments`;
 
 -- =========================================
 -- FEEDBACK (client rates resolved tickets)
@@ -187,6 +213,13 @@ CREATE TABLE `feedback` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`)
+);
+
+
+CREATE TABLE IF NOT EXISTS `user_presence` (
+  `user_id` INT PRIMARY KEY,
+  `last_seen` TIMESTAMP NOT NULL,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
 SHOW TABLES;

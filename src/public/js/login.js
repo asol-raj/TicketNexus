@@ -12,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        credentials: "include", // important so Set-Cookie (jwt) is honored
         body: JSON.stringify({ username: payload.username, password: payload.password })
       });
       const j = await res.json();

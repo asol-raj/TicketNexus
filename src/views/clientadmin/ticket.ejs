@@ -1,0 +1,148 @@
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Ticket #
+      <?= ticket.id ?> —
+      <?= ticket.subject ?>
+    </h2>
+    <? 
+      let badgeClass = "bg-secondary";
+      if (ticket.status === "open") badgeClass = "bg-info";
+      else if (ticket.status === "in_progress") badgeClass = "bg-warning text-dark";
+      else if (ticket.status === "resolved") badgeClass = "bg-success";
+      else if (ticket.status === "closed") badgeClass = "bg-dark";
+    ?>
+    <span class="badge <?= badgeClass ?> text-uppercase">
+      <?= ticket.status ?>
+    </span>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="mb-2"><strong>Priority:</strong> <span class="text-uppercase">
+              <?= ticket.priority ?>
+            </span></div>
+          <div class="mb-2"><strong>Assignee:</strong>
+            <?= ticket.assignee_label || 'Unassigned' ?>
+          </div>
+          <div class="mb-2"><strong>Raised by:</strong>
+            <?= ticket.raised_by_label ?>
+          </div>
+          <div><strong>Created:</strong>
+            <?= new Date(ticket.created_at).toLocaleString() ?>
+          </div>
+          <? if (ticket.due_at) { ?>
+          <div><strong>Due:</strong>
+            <?= new Date(ticket.due_at).toLocaleString() ?>
+          </div>
+          <? } ?>
+        </div>
+      </div>
+
+      <!-- Follow-ups -->
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold">Progress / Follow-ups</div>
+        <div class="card-body">
+          <form id="commentForm" class="vstack gap-2 mb-3">
+            <textarea class="form-control" name="content" id="commentContent" rows="3"
+              placeholder="Write an update..."></textarea>
+            <button class="btn btn-primary btn-sm" type="submit">Post Update</button>
+            <div id="commentMsg" class="small"></div>
+          </form>
+
+          <div id="commentList" class="vstack gap-3">
+            <? if (comments && comments.length) { ?>
+            <? comments.forEach(p => { ?>
+            <div class="border rounded p-3">
+              <div class="small text-muted mb-1">
+                <strong>
+                  <?= p.author_label ?>
+                </strong> ·
+                <?= new Date(p.created_at).toLocaleString() ?>
+              </div>
+              <div style="white-space:pre-wrap;">
+                <?= p.content ?>
+              </div>
+            </div>
+            <? }) ?>
+            <? } else { ?>
+            <div class="text-muted">No updates yet.</div>
+            <? } ?>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>Attachments</span>
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addAttachmentsModal">
+            ➕ Add Attachments
+          </button>
+        </div>
+        <div class="card-body">
+          <? if (attachments && attachments.length) { ?>
+          <div class="row g-2" id="attachmentGrid">
+            <? attachments.forEach(a => { ?>
+            <div class="col-12 <?= a.is_image ? 'col-sm-6' : '' ?> attachment-item" data-attach-id="<?= a.id ?>">
+              <div class="border rounded p-2 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="small text-muted">
+                    Uploaded by:
+                    <?= a.uploader_label || 'Unknown' ?> ·
+                    <?= new Date(a.uploaded_at).toLocaleString() ?>
+                  </div>
+                  <? if (a.uploaded_by === user.id) { ?>
+                  <button class="btn btn-sm btn-outline-danger att-delete" data-id="<?= a.id ?>"
+                    title="Delete attachment">🗑</button>
+                  <? } ?>
+                </div>
+
+                <? if (a.is_image) { ?>
+                <a href="/attachments/<?= a.id ?>" target="_blank" class="d-block">
+                  <img src="/attachments/<?= a.id ?>" alt="attachment" class="img-fluid rounded">
+                </a>
+                <? } else { ?>
+                <a class="d-block" href="/attachments/<?= a.id ?>" target="_blank">
+                  <?= a.file_path.split('/').slice(-1)[0] ?>
+                </a>
+                <? } ?>
+              </div>
+            </div>
+            <? }) ?>
+          </div>
+          <? } else { ?>
+          <div class="text-muted">No attachments.</div>
+          <? } ?>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Attachments Modal -->
+<div class="modal fade" id="addAttachmentsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="addAttachmentsForm" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Attachments to Ticket #<?= ticket.id ?></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input class="form-control" type="file" name="attachments" id="attachmentsInput" multiple required>
+        <div class="form-text">You can upload multiple files (images, PDFs, etc.).</div>
+      </div>
+      <div class="modal-footer">
+        <div id="addAttMsg" class="me-auto small"></div>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Upload</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script type="module" src="/js/ticket.js"></script>
+<script>window.__TICKET_ID__ = <?= ticket.id ?>;</script>
