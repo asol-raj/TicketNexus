@@ -122,6 +122,7 @@ CREATE TABLE `tickets` (
     `status` ENUM('open','in_progress','resolved','closed') DEFAULT 'open',
     `sla_policy_id` INT NULL,
     `due_at` DATETIME NULL,
+    `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom',
     `resolved_at` DATETIME NULL,
     `sla_status` ENUM('within_sla','breached') DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -131,6 +132,10 @@ CREATE TABLE `tickets` (
     FOREIGN KEY (`assigned_to`) REFERENCES `employees`(`id`),
     FOREIGN KEY (`sla_policy_id`) REFERENCES `sla_policies`(`id`)
 );
+
+ALTER TABLE `tickets`
+  ADD COLUMN `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom' AFTER `due_at`;
+
 
 -- ALTER TABLE tickets ADD COLUMN `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
