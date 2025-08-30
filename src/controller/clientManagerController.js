@@ -49,13 +49,15 @@ async function listAssignees(req, res) {
               u.role, u.admin_type
          FROM employees e
          JOIN users u ON u.id = e.user_id
-        WHERE u.client_id=? AND (
-              (u.role='admin' AND u.admin_type='internal')
-           OR (u.role='manager')
-           OR (u.role='employee')
-        )
+        WHERE u.client_id = ?
+          AND (
+               (u.role='admin' AND u.admin_type='internal')
+            OR (u.role='manager')
+            OR (u.role='employee')
+          )
+          AND u.id <> ?   -- exclude current logged-in user
         ORDER BY label ASC`,
-      [clientId]
+      [clientId, req.user.id]
     );
     res.json({ success: true, assignees: rows });
   } catch (e) {
@@ -63,6 +65,7 @@ async function listAssignees(req, res) {
     res.status(500).json({ success: false, error: "Server error" });
   }
 }
+
 
 // ---------- Data: tickets (live) ----------
 async function listTickets(req, res) {
@@ -127,8 +130,8 @@ async function createClientEmployee(req, res) {
     const user_id = rUser.insertId;
 
     await pool.query(
-      "INSERT INTO employees (user_id, first_name, last_name, position, manager_id, date_of_joining, employment_type) VALUES (?,?,?,?,?,?, 'client')",
-      [user_id, first_name || null, last_name || null, "Client Employee", mgrEmpId, date_of_joining || null]
+      "INSERT INTO employees (user_id, first_name, last_name, manager_id, date_of_joining, position, employment_type) VALUES (?,?,?,?,?, 'Employee', 'client')",
+      [user_id, first_name || null, last_name || null, mgrEmpId, date_of_joining || null]
     );
 
     res.json({ success: true, user_id });
@@ -171,44 +174,111 @@ async function resetEmployeePassword(req, res) {
 
 // ---------- Ticket creation (kept) ----------
 function attachmentsMiddlewareExports() { return attachmentsMiddleware(); }
-async function createTicket(req, res) {
-  const u = req.user;
-  const clientId = u.client_id;
-  const { subject, description, priority, due_at, assigned_to } = req.body || {};
-  if (!subject) return res.status(400).json({ error: "Subject is required." });
 
+async function createTicket(req, res) {
   try {
-    let assignedEmployeeId = assigned_to ? Number(assigned_to) : null;
+    const u = req.user;
+    const clientId = u.client_id;
+
+    const { subject, description, priority, due_option, due_at, assigned_to } = req.body || {};
+
+    if (!subject) return res.status(400).json({ success: false, error: "Subject required" });
+
+    // Calculate dueAt based on due_option
+    let dueAt = null;
+    switch (due_option) {
+      case "today": {
+        const d = new Date();
+        d.setHours(23, 59, 59, 999);
+        dueAt = d;
+        break;
+      }
+      case "tomorrow": {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setHours(23, 59, 59, 999);
+        dueAt = d;
+        break;
+      }
+      case "this_week": {
+        const d = new Date();
+        const day = d.getDay(); // 0=Sun
+        const diff = 7 - day;   // end of this week (Saturday)
+        d.setDate(d.getDate() + diff);
+        d.setHours(23, 59, 59, 999);
+        dueAt = d;
+        break;
+      }
+      case "next_week": {
+        const d = new Date();
+        const day = d.getDay();
+        const diff = 7 - day + 6; // end of next week (Saturday)
+        d.setDate(d.getDate() + diff);
+        d.setHours(23, 59, 59, 999);
+        dueAt = d;
+        break;
+      }
+      case "custom":
+        dueAt = due_at ? new Date(due_at) : null;
+        break;
+      default:
+        dueAt = null;
+    }
+
+    const assignedEmployeeId = assigned_to && assigned_to !== "" ? Number(assigned_to) : null;
+
+    // Validate assignee if provided
     if (assignedEmployeeId) {
       const [[ok]] = await pool.query(
-        `SELECT e.id FROM employees e JOIN users ux ON ux.id=e.user_id
-          WHERE e.id=? AND ux.client_id=? AND (
-             (ux.role='admin' AND ux.admin_type='internal') OR (ux.role='manager') OR (ux.role='employee')
-          ) LIMIT 1`,
+        `SELECT e.id 
+           FROM employees e 
+           JOIN users ux ON ux.id = e.user_id
+          WHERE e.id = ?
+            AND (
+                 (ux.client_id = ? AND ux.admin_type = 'client')  -- same client employees
+              OR (ux.admin_type = 'internal')                     -- internal staff
+            )
+          LIMIT 1`,
         [assignedEmployeeId, clientId]
       );
-      if (!ok) return res.status(400).json({ error: "Invalid assignee." });
+      if (!ok) {
+        return res.status(400).json({ success: false, error: "Invalid assignee." });
+      }
     }
 
+    // Insert ticket
     const [rT] = await pool.query(
-      `INSERT INTO tickets (client_id, raised_by, assigned_to, subject, description, priority, status, due_at)
-       VALUES (?,?,?,?,?,?, 'open', ?)`,
-      [clientId, u.id, assignedEmployeeId, subject, description || null, priority || 'medium', due_at || null]
+      `INSERT INTO tickets 
+        (client_id, raised_by, assigned_to, subject, description, priority, status, due_option, due_at)
+       VALUES (?,?,?,?,?,?, 'open', ?, ?)`,
+      [
+        clientId,
+        u.id,
+        assignedEmployeeId,
+        subject,
+        description || null,
+        priority || "medium",
+        due_option || "custom",
+        dueAt,
+      ]
     );
+
     const ticketId = rT.insertId;
 
+    // Save attachments if provided
     const files = req.files || [];
     for (const f of files) {
-      const rel = path.join("uploads", "tickets", path.basename(f.path)).replace(/\\/g, "/");
+      const filePath = path.join("uploads", "attachments", f.filename);
       await pool.query(
-        "INSERT INTO ticket_attachments (ticket_id, file_path, uploaded_by) VALUES (?,?,?)",
-        [ticketId, rel, u.id]
+        "INSERT INTO ticket_attachments(ticket_id,uploaded_by,file_path,uploaded_at) VALUES (?,?,?,NOW())",
+        [ticketId, u.id, filePath]
       );
     }
+
     res.json({ success: true, ticket_id: ticketId });
-  } catch (e) {
-    console.error("clientManager createTicket error:", e);
-    res.status(500).json({ error: "Server error" });
+  } catch (err) {
+    console.error("clientManager createTicket error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
@@ -377,11 +447,14 @@ async function updateTicketStatus(req, res) {
   const map = { pending: "open", in_progress: "in_progress", resolved: "closed" };
   const dbStatus = map[(req.body?.status || "").toLowerCase()] || "open";
 
-  const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [id, clientId]);
-  if (!tk) return res.status(404).json({ success:false, error:"Not found" });
+  const [[tk]] = await pool.query(
+    "SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1",
+    [id, clientId]
+  );
+  if (!tk) return res.status(404).json({ success: false, error: "Not found" });
 
   await pool.query("UPDATE tickets SET status=?, updated_at=NOW() WHERE id=?", [dbStatus, id]);
-  res.json({ success:true, status: dbStatus });
+  res.json({ success: true, status: dbStatus });
 }
 
 module.exports = {

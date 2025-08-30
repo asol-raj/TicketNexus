@@ -1,65 +1,64 @@
 <div class="container-fluid py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="mb-0">Manager Dashboard</h1>
-    <span class="badge bg-secondary text-uppercase">Manager</span>
+    <span class="badge bg-primary text-uppercase">Manager</span>
   </div>
 
   <div class="row g-3">
-    <!-- Left: Tickets -->
-    <div class="col-12 col-lg-3">
+    <!-- Left: Ticket Status Overview -->
+    <div class="col-12 col-lg-2">
       <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold d-flex align-items-center justify-content-between">
-          <span>All Tickets</span>
-          <div class="btn-group btn-group-sm" role="group">
-            <button class="btn btn-outline-primary" id="filterAll">All</button>
-            <button class="btn btn-outline-primary" id="filterUnassigned">Unassigned</button>
+        <div class="card-header fw-bold">Ticket Overview</div>
+        <div class="list-group list-group-flush small">
+          <div class="list-group-item d-flex justify-content-between">
+            <span>Open</span><span class="badge bg-info">
+              <?= stats.open || 0 ?>
+            </span>
           </div>
-        </div>
-        <div class="list-group list-group-flush" id="ticketList" style="max-height:72vh; overflow:auto;">
-          <? if (tickets && tickets.length) { ?>
-          <? tickets.forEach(t => { ?>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <strong>#
-                <?= t.id ?> ·
-                <?= t.subject || 'Ticket' ?>
-              </strong>
-              <span class="badge bg-secondary text-uppercase">
-                <?= t.priority || 'n/a' ?>
-              </span>
-            </div>
-            <div class="small text-muted mb-2">
-              Status:
-              <?= t.status || 'n/a' ?> · Assignee:
-              <?= t.assignee_label || 'Unassigned' ?>
-            </div>
-            <div class="d-flex gap-2">
-              <select class="form-select form-select-sm assign-select" data-ticket-id="<?= t.id ?>">
-                <option value="">Assign to…</option>
-                <? teamSelect.forEach(emp => { ?>
-                <option value="<?= emp.employee_id ?>">
-                  <?= emp.label ?>
-                </option>
-                <? }) ?>
-              </select>
-              <button class="btn btn-sm btn-primary do-assign" data-ticket-id="<?= t.id ?>">Assign</button>
-            </div>
+          <div class="list-group-item d-flex justify-content-between">
+            <span>In Progress</span><span class="badge bg-warning text-dark">
+              <?= stats.in_progress || 0 ?>
+            </span>
           </div>
-          <? }) ?>
-          <? } else { ?>
-          <div class="list-group-item text-muted">No tickets found.</div>
-          <? } ?>
+          <div class="list-group-item d-flex justify-content-between">
+            <span>Resolved</span><span class="badge bg-success">
+              <?= stats.resolved || 0 ?>
+            </span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between">
+            <span>Closed</span><span class="badge bg-secondary">
+              <?= stats.closed || 0 ?>
+            </span>
+          </div>
+          <hr class="my-1">
+          <div class="list-group-item d-flex justify-content-between">
+            <span>High</span><span class="badge bg-danger">
+              <?= stats.high || 0 ?>
+            </span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between">
+            <span>Medium</span><span class="badge bg-primary">
+              <?= stats.medium || 0 ?>
+            </span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between">
+            <span>Low</span><span class="badge bg-success">
+              <?= stats.low || 0 ?>
+            </span>
+          </div>
+          <div class="list-group-item d-flex justify-content-between">
+            <span>Urgent</span><span class="badge bg-dark">
+              <?= stats.urgent || 0 ?>
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Center: Team overview -->
+    <!-- Middle: Team overview -->
     <div class="col-12 col-lg-6">
       <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold d-flex justify-content-between">
-          <span>Your Team</span>
-          <span class="small text-muted">Online window: 10 min</span>
-        </div>
+        <div class="card-header fw-bold">Your Team</div>
         <div class="table-responsive" style="max-height:72vh; overflow:auto;">
           <table class="table table-sm align-middle mb-0" id="teamTable">
             <thead class="table-light">
@@ -67,7 +66,7 @@
                 <th>Name</th>
                 <th>Position</th>
                 <th>Open Tickets</th>
-                <th>Attendance</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -91,11 +90,18 @@
                   <span class="badge bg-secondary">Offline</span>
                   <? } ?>
                 </td>
-                <td class="d-flex gap-2">
-                  <button class="btn btn-sm btn-outline-primary act-edit"
-                    data-employee-id="<?= m.employee_id ?>">Edit</button>
-                  <button class="btn btn-sm btn-outline-danger act-reset" data-employee-id="<?= m.employee_id ?>">Reset
-                    PW</button>
+                <td>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                      Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item act-edit" href="#" data-employee-id="<?= m.employee_id ?>">Edit
+                          Profile</a></li>
+                      <li><a class="dropdown-item act-reset" href="#" data-employee-id="<?= m.employee_id ?>">Reset
+                          Password</a></li>
+                    </ul>
+                  </div>
                 </td>
               </tr>
               <? }) ?>
@@ -110,49 +116,119 @@
       </div>
     </div>
 
-    <!-- Right: Profile editor -->
-    <div class="col-12 col-lg-3">
+    <!-- Right: Tickets -->
+    <div class="col-12 col-lg-4">
       <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-          <span>Edit Employee Profile</span>
-          <span class="small text-muted" id="pf_hint">Select a team member first</span>
+        <div class="card-header fw-bold d-flex align-items-center justify-content-between">
+          <span>Tickets</span>
+          <div class="btn-group btn-group-sm" role="group">
+            <button class="btn btn-outline-primary active" id="filterActionable">Actionable</button>
+            <button class="btn btn-outline-primary" id="filterOpen">Open</button>
+            <button class="btn btn-outline-primary" id="filterUnassigned">Unassigned</button>
+            <button class="btn btn-outline-secondary" id="filterClosed">Closed</button>
+          </div>
+
         </div>
-        <div class="card-body" id="pf_body" style="opacity:.6; pointer-events:none;">
-          <form id="profileForm" class="vstack gap-2">
-            <input type="hidden" name="employee_id" id="pf_employee_id">
-            <div>
-              <label class="form-label">First name</label>
-              <input class="form-control" name="first_name" id="pf_first_name" placeholder="First name">
+        <div class="list-group list-group-flush" id="ticketList" style="max-height:72vh; overflow:auto;">
+          <? if (tickets && tickets.length) { ?>
+          <? tickets.forEach(t => { ?>
+          <div class="list-group-item ticket-item" data-status="<?= t.status ?>"
+            data-assignee="<?= t.assignee_label || '' ?>">
+            <div class="d-flex justify-content-between">
+              <strong>
+                <a href="/manager/tickets/<?= t.id ?>" target="_blank" class="text-decoration-none">
+                  #
+                  <?= t.id ?> ·
+                  <?= t.subject || 'Ticket' ?>
+                </a>
+              </strong>
+              <span class="badge bg-secondary">
+                <?= t.priority || 'n/a' ?>
+              </span>
             </div>
-            <div>
-              <label class="form-label">Last name</label>
-              <input class="form-control" name="last_name" id="pf_last_name" placeholder="Last name">
+            <div class="small text-muted mb-2">
+              Status:
+              <?= t.status || 'n/a' ?> · Assignee:
+              <?= t.assignee_label || 'Unassigned' ?>
             </div>
-            <div>
-              <label class="form-label">Position</label>
-              <input class="form-control" name="position" id="pf_position" placeholder="Position">
+            <div class="d-flex gap-2 assign-wrap <?= (t.status === 'closed') ? 'd-none' : '' ?>">
+              <select class="form-select form-select-sm assign-select" data-ticket-id="<?= t.id ?>">
+                <option value="">Assign to…</option>
+                <? teamSelect.forEach(emp => { ?>
+                <option value="<?= emp.employee_id ?>">
+                  <?= emp.label ?>
+                </option>
+                <? }) ?>
+              </select>
+              <button class="btn btn-sm btn-primary do-assign" data-ticket-id="<?= t.id ?>">Assign</button>
             </div>
-            <div>
-              <label class="form-label">Date of Joining</label>
-              <input class="form-control" name="date_of_joining" id="pf_doj" type="date">
-            </div>
-            <button class="btn btn-primary btn-sm mt-2" type="submit">Save Profile</button>
-          </form>
-          <div id="profileMsg" class="small mt-2"></div>
-          <hr>
-          <form id="resetPwForm" class="vstack gap-2">
-            <input type="hidden" name="employee_id" id="rp_employee_id">
-            <div>
-              <label class="form-label">New Password</label>
-              <input class="form-control" name="new_password" id="rp_new_password" type="password"
-                placeholder="New password">
-            </div>
-            <button class="btn btn-outline-danger btn-sm mt-2" type="submit">Reset Password</button>
-          </form>
-          <div id="resetMsg" class="small mt-2 text-danger"></div>
+          </div>
+          <? }) ?>
+          <? } else { ?>
+          <div class="list-group-item text-muted">No tickets found.</div>
+          <? } ?>
         </div>
       </div>
     </div>
+
+  </div>
+</div>
+
+<!-- Employee Edit Modal -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="profileForm">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Employee Profile</h5>
+        <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body vstack gap-2">
+        <input type="hidden" name="employee_id" id="pf_employee_id">
+        <div>
+          <label class="form-label">First name</label>
+          <input class="form-control" name="first_name" id="pf_first_name">
+        </div>
+        <div>
+          <label class="form-label">Last name</label>
+          <input class="form-control" name="last_name" id="pf_last_name">
+        </div>
+        <div>
+          <label class="form-label">Position</label>
+          <input class="form-control" name="position" id="pf_position">
+        </div>
+        <div>
+          <label class="form-label">Date of Joining</label>
+          <input class="form-control" type="date" name="date_of_joining" id="pf_doj">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPwModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="resetPwForm">
+      <div class="modal-header">
+        <h5 class="modal-title">Reset Password</h5>
+        <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body vstack gap-2">
+        <input type="hidden" name="employee_id" id="rp_employee_id">
+        <div>
+          <label class="form-label">New Password</label>
+          <input class="form-control" type="password" name="new_password" id="rp_new_password">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" type="submit">Reset</button>
+      </div>
+    </form>
   </div>
 </div>
 

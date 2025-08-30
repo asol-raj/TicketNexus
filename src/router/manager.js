@@ -1,18 +1,35 @@
 const express = require("express");
 const router = express.Router();
-const ctrl = require("../controller/managerController");
-const { requireJWT, requireManager, requireInternalManager } = require("../middlewares/jwtAuth");
 
-// Page
-router.get("/", requireJWT, requireInternalManager, ctrl.dashboard);
+const managerCtrl = require("../controller/managerController");
 
-// Data
-router.get("/data/team", requireJWT, requireInternalManager, ctrl.getTeam);
-router.get("/data/tickets", requireJWT, requireInternalManager, ctrl.getTickets);
+// Middlewares – adjust to your auth setup
+const { requireJWT, requireManager } = require("../middlewares/jwtAuth");
 
-// Actions
-router.put("/tickets/:id/assign", requireJWT, requireInternalManager, ctrl.assignTicket);
-router.put("/employees/:employee_id/profile", requireJWT, requireInternalManager, ctrl.updateEmployeeProfile);
-router.put("/employees/:employee_id/reset-password", requireJWT, requireInternalManager, ctrl.resetEmployeePassword);
+// ===================== Dashboard =====================
+router.get("/", requireJWT, requireManager, managerCtrl.dashboard);
+
+// ===================== Team APIs =====================
+router.get("/team", requireJWT, requireManager, managerCtrl.getTeam);
+router.post("/update-employee", requireJWT, requireManager, managerCtrl.updateEmployeeProfile);
+router.post("/reset-password", requireJWT, requireManager, managerCtrl.resetEmployeePassword);
+
+// ===================== Ticket APIs (list/assign) =====================
+router.get("/tickets", requireJWT, requireManager, managerCtrl.getTickets);
+router.post("/assign-ticket", requireJWT, requireManager, managerCtrl.assignTicket);
+
+// ===================== Ticket Page =====================
+router.get("/tickets/:id", requireJWT, requireManager, managerCtrl.ticketPage);
+router.get("/tickets/:id/comments", requireJWT, requireManager, managerCtrl.listTicketComments);
+router.post("/tickets/:id/comments", requireJWT, requireManager, managerCtrl.createTicketComment);
+router.put("/tickets/:id/comments/:commentId", requireJWT, requireManager, managerCtrl.updateTicketComment);
+router.post(
+  "/tickets/:id/attachments",
+  requireJWT,
+  requireManager,
+  managerCtrl.attachmentsMiddleware(),
+  managerCtrl.addTicketAttachments
+);
+router.put("/tickets/:id/status", requireJWT, requireManager, managerCtrl.updateTicketStatus);
 
 module.exports = router;

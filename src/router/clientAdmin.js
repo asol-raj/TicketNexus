@@ -14,6 +14,8 @@ router.get("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.listTic
 
 // Actions
 router.post("/managers", requireJWT, requireClientAdmin, ctrl.createManager);
+router.post("/employees", requireJWT, requireClientAdmin, ctrl.createClientEmployee);
+router.post("/employees/:userId/reset-password", requireJWT, requireClientAdmin, ctrl.resetEmployeePassword);
 router.post("/tickets", requireJWT, requireClientAdmin, ctrl.attachmentsMiddleware(), ctrl.createTicket);
 router.post("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.createTicketComment);
 router.put("/tickets/:id/comments/:commentId", requireJWT, requireClientAdmin, ctrl.updateTicketComment); // NEW
@@ -23,5 +25,7 @@ router.post("/tickets/:id/attachments",
   ctrl.addTicketAttachments
 );
 router.put("/tickets/:id/status", requireJWT, requireClientAdmin, ctrl.updateTicketStatus); // NEW
+router.post("/client/employees/update", requireClientAdmin, ctrl.updateEmployee);
+
 
 module.exports = router;

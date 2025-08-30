@@ -13,11 +13,31 @@ function renderTicketsTable(tickets){
     tr.innerHTML=`
       <td>${t.id}</td>
       <td>${t.subject||"-"}</td>
-      <td class="text-uppercase small">${t.priority||"-"}</td>
-      <td class="text-capitalize">${t.status||"-"}</td>
+      <td class="text-uppercase small">
+        <span class="badge ${
+          t.priority === "urgent"
+            ? "bg-danger"
+            : t.priority === "high"
+            ? "bg-warning text-dark"
+            : t.priority === "low"
+            ? "bg-secondary"
+            : "bg-info text-dark"
+        } text-uppercase">${t.priority || "-"}</span>
+      </td>
       <td>${t.assignee_label||"Unassigned"}</td>
       <td>${t.created_at?new Date(t.created_at).toLocaleString():"-"}</td>
-      <td>${t.due_at?new Date(t.due_at).toLocaleString():"-"}</td>`;
+      <td>${t.due_at?new Date(t.due_at).toLocaleString():"-"}</td>
+      <td class="text-capitalize">
+        <span class="badge ${
+          t.status === "open"
+            ? "bg-primary"
+            : t.status === "in_progress"
+            ? "bg-warning text-dark"
+            : t.status === "resolved"
+            ? "bg-success"
+            : "bg-secondary"
+        } text-capitalize">${t.status || "-"}</span>
+      </td>`;
     tb.appendChild(tr);
   }
 }
@@ -144,6 +164,18 @@ function bindNewTicketForm(){
     }catch(err){ if(msg) msg.textContent=err.message; }
   });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sel = document.getElementById("dueOptionSelect");
+  const custom = document.getElementById("customDueWrapper");
+  sel?.addEventListener("change", () => {
+    if (sel.value === "custom") {
+      custom.classList.remove("d-none");
+    } else {
+      custom.classList.add("d-none");
+    }
+  });
+});
 
 document.addEventListener("DOMContentLoaded",()=>{
   bindFilters();

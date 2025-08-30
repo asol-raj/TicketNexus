@@ -1,11 +1,17 @@
 <div class="container-fluid py-3" id="ticketPage" data-ticket-id="<?= ticket.id ?>" data-user-id="<?= user.id ?>">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Ticket #
-      <?= ticket.id ?> —
-      <?= ticket.subject ?>
-    </h2>
 
-    <? 
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <a href="/manager" class="btn btn-sm btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left"></i> Back
+      </a>
+      <h2 class="d-inline">Ticket #
+        <?= ticket.id ?> —
+        <?= ticket.subject ?>
+      </h2>
+    </div>
+
+    <?
       let badgeClass = "bg-secondary";
       if (ticket.status === "open") badgeClass = "bg-info";
       else if (ticket.status === "in_progress") badgeClass = "bg-warning text-dark";
@@ -26,6 +32,7 @@
   </div>
 
   <div class="row g-3">
+    <!-- Left: details + comments -->
     <div class="col-12 col-lg-8">
       <div class="card shadow-sm mb-3">
         <div class="card-header fw-bold">Details</div>
@@ -33,7 +40,7 @@
           <div class="mb-2"><strong>Priority:</strong> <span class="text-uppercase">
               <?= ticket.priority ?>
             </span></div>
-          <div class="d-flex justify-content-between align-items-center gap-5">
+          <div class="d-flex justify-content-between align-items-center gap-5 flex-wrap">
             <div class="mb-2"><strong>Raised by:</strong>
               <?= ticket.raised_by_label ?>
             </div>
@@ -47,10 +54,10 @@
             <div><strong>Due:</strong>
               <?= new Date(ticket.due_at).toLocaleString() ?>
             </div>
+            <? } ?>
           </div>
           <strong>Description:</strong>
-            <?= ticket.description ?>
-          <? } ?>
+          <?= ticket.description ?>
         </div>
       </div>
 
@@ -81,7 +88,7 @@
                 <button class="btn edit-comment"><i class="bi bi-pencil-square"></i></button>
                 <? } ?>
               </div>
-              <div class="mt-1 comment-content">
+              <div class="mt-1 comment-content" style="white-space:pre-wrap;">
                 <?= p.content ?>
               </div>
             </div>
@@ -94,13 +101,14 @@
       </div>
     </div>
 
-    <!-- Right: comments -->
+    <!-- Right: attachments -->
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm">
         <div class="card-header fw-bold d-flex justify-content-between align-items-center">
           <span>Attachments</span>
           <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addAttachmentsModal">
-            <i class="bi bi-plus-lg"></i> Attachments</button>
+            <i class="bi bi-plus-lg"></i> Attachments
+          </button>
         </div>
         <div class="card-body">
           <? if (attachments && attachments.length) { ?>
@@ -115,7 +123,8 @@
                     <?= new Date(a.uploaded_at).toLocaleString() ?>
                   </div>
                   <? if (a.uploaded_by === user.id) { ?>
-                  <button class="btn btn-sm btn-outline-danger delete-attachment" data-id="<?= a.id ?>"><i class="bi bi-trash"></i></button>
+                  <button class="btn btn-sm btn-outline-danger delete-attachment" data-id="<?= a.id ?>"><i
+                      class="bi bi-trash"></i></button>
                   <? } ?>
                 </div>
                 <? if (a.is_image) { ?>
@@ -130,7 +139,6 @@
               </div>
             </div>
             <? }) ?>
-
           </div>
           <? } else { ?>
           <div class="text-muted">No attachments.</div>
@@ -164,6 +172,7 @@
   </div>
 </div>
 
+<!-- Edit Comment Modal -->
 <div class="modal fade" id="editCommentModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form class="modal-content" id="editCommentForm">
@@ -183,5 +192,4 @@
   </div>
 </div>
 
-
-<script type="module" src="/js/ticket.js"></script>
+<script type="module" src="/js/ticket-internal-manager.js"></script>

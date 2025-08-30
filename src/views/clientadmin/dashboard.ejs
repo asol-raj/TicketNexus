@@ -1,12 +1,15 @@
 <div class="container-fluid py-3">
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <h1 class="mb-0">Client Admin Dashboard</h1>
-    <div class="d-flex gap-2">
-      <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#newTicketModal">
-        <span style="font-size:1.2rem; line-height:1;">📝</span> New Ticket
+    <h2 class="mb-0">Dashboard</h2>
+    <div class="d-flex gap-4">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTicketModal">
+        <i class="bi bi-plus-lg"></i> Create New Ticket
       </button>
       <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createManagerModal">
-        <span class="me-1">➕</span> Create Manager
+        <i class="bi bi-plus-lg"></i> Create Manager
+      </button>
+      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createEmployeeModal">
+        <i class="bi bi-plus-lg"></i> Create Employee
       </button>
     </div>
   </div>
@@ -25,7 +28,7 @@
             <button class="btn btn-outline-secondary" id="fltClosed">Closed</button>
           </div>
         </div>
-        <div class="table-responsive" style="max-height:70vh; overflow:auto;">
+        <div class="card-body table-responsive" style="max-height:70vh; overflow:auto;">
           <table class="table table-sm align-middle mb-0" id="ticketsTable">
             <thead class="table-light">
               <tr>
@@ -44,16 +47,177 @@
       </div>
     </div>
 
-    <!-- Right: Recent (compact list) -->
-    <div class="col-12 col-lg-4">
+    <!-- Right: Your Team -->
+    <div class="col-12 col-lg-4 d-none">
       <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold d-flex justify-content-between">
-          <span>Recent Tickets</span>
-          <span class="small text-muted">Total: <?= totals.total_tickets ?></span>
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>Your Team</span>
         </div>
-        <div class="list-group list-group-flush" id="recentList" style="max-height:70vh; overflow:auto;"></div>
+        <div class="card-body" style="max-height:70vh; overflow:auto;">
+          <? if (employees && employees.length > 0) { ?>
+          <table class="table table-sm mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Role</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <? employees.forEach(e => { ?>
+              <tr>
+                <td>
+                  <?= e.first_name ?>
+                  <?= e.last_name ?>
+                </td>
+                <td>
+                  <?= e.position || '-' ?>
+                </td>
+                <td><span class="badge bg-secondary">
+                    <?= e.role ?>
+                  </span></td>
+                <td>
+                  <a href="/client/employees/<?= e.id ?>/edit" class="btn btn-sm btn-outline-primary">
+                    Edit
+                  </a>
+                </td>
+              </tr>
+              <? }) ?>
+            </tbody>
+          </table>
+          <? } else { ?>
+          <div class="p-3 text-muted">No employees found.</div>
+          <? } ?>
+        </div>
       </div>
     </div>
+
+    <!-- Right: Your Team -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>Your Team</span>          
+        </div>
+        <div class="card-body" style="max-height:70vh; overflow:auto;">
+          <? if (employees && employees.length > 0) { ?>
+          <table class="table table-sm table-striped mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Role</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <? employees.forEach(e => { ?>
+              <tr>
+                <td>
+                  <?= e.first_name ?>
+                  <?= e.last_name ?>
+                </td>
+                <td>
+                  <?= e.position || '-' ?>
+                </td>
+                <td><span class="badge bg-secondary">
+                    <?= e.role ?>
+                  </span></td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary edit-employee-btn" data-id="<?= e.id ?>"
+                    data-firstname="<?= e.first_name ?>" data-lastname="<?= e.last_name ?>"
+                    data-position="<?= e.position ?>" data-role="<?= e.role ?>" data-manager="<?= e.manager_id ?>"
+                    data-doj="<?= e.date_of_joining ?>" data-bs-toggle="modal" data-bs-target="#editEmployeeModal">
+                    Edit
+                  </button>
+                </td>
+              </tr>
+              <? }) ?>
+            </tbody>
+          </table>
+          <? } else { ?>
+          <div class="p-3 text-muted">No employees found.</div>
+          <? } ?>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+<!-- Create Employee Modal -->
+<div class="modal fade" id="createEmployeeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="createEmployeeForm">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Client Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body vstack gap-2">
+        <div class="row g-2">
+          <div class="col-6"><input class="form-control" name="first_name" placeholder="First name"></div>
+          <div class="col-6"><input class="form-control" name="last_name" placeholder="Last name"></div>
+        </div>
+        <input class="form-control" name="username" placeholder="Username (optional)">
+        <input class="form-control" name="email" type="email" placeholder="Email" required>
+        <input class="form-control" name="password" type="password" placeholder="Password" required>
+        <div>
+          <label class="form-label mb-1">Date of joining</label>
+          <input class="form-control" name="date_of_joining" type="date">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div id="empMsg" class="me-auto small"></div>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Employee Modal -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="editEmployeeForm">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body vstack gap-2">
+        <input type="hidden" name="id" id="editEmpId">
+        <div class="row g-2">
+          <div class="col-6"><input class="form-control" name="first_name" id="editFirstName" placeholder="First name">
+          </div>
+          <div class="col-6"><input class="form-control" name="last_name" id="editLastName" placeholder="Last name">
+          </div>
+        </div>
+        <input class="form-control" name="position" id="editPosition" placeholder="Position">
+
+        <div id="managerWrapper">
+          <label class="form-label mb-1">Manager</label>
+          <select class="form-select" name="manager_id" id="editManager">
+            <option value="">None</option>
+            <? managers.forEach(m => { ?>
+            <option value="<?= m.id ?>">
+              <?= m.first_name ?>
+              <?= m.last_name ?>
+            </option>
+            <? }) ?>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label mb-1">Date of Joining</label>
+          <input class="form-control" name="date_of_joining" type="date" id="editDOJ">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div id="editEmpMsg" class="me-auto small"></div>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save Changes</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -95,18 +259,20 @@
           <textarea class="form-control" name="description" placeholder="Describe the issue" rows="4"></textarea>
           <div class="row g-2">
             <div class="col-md-4">
-              <label class="form-label">Priority</label>
-              <select class="form-select" name="priority">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
+              <label class="form-label">Due Option</label>
+              <select class="form-select" name="due_option" id="dueOptionSelect">
+                <option value="today">Today</option>
+                <option value="tomorrow">By Tomorrow</option>
+                <option value="this_week">By This Week</option>
+                <option value="next_week">By Next Week</option>
+                <option value="custom">Custom Date</option>
               </select>
             </div>
-            <div class="col-md-4">
-              <label class="form-label">Due at</label>
+            <div class="col-md-4 d-none" id="customDueWrapper">
+              <label class="form-label">Due Date</label>
               <input class="form-control" name="due_at" type="datetime-local">
             </div>
+
             <div class="col-md-4">
               <label class="form-label">Assign to (optional)</label>
               <select class="form-select" name="assigned_to" id="assigneeSelect">

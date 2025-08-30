@@ -1,132 +1,128 @@
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Employee Dashboard</h1>
-    <span class="badge bg-dark">Employee</span>
-  </div>
+<div class="container-fluid py-3">
+  <!-- <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold">Employee Dashboard</h2>
+  </div> -->
 
-  <!-- Header info -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
+  <div class="row g-3">
+    <!-- Left Column (col-3) -->
+    <div class="col-md-2">
+      <!-- Welcome -->
+      <div class="card shadow-sm mb-3 text-center">
         <div class="card-body">
-          <h5 class="card-title">Welcome</h5>
-          <p class="mb-1 fw-bold"><?= emp.first_name ?> <?= emp.last_name ?></p>
-          <p class="text-muted mb-0">Manager: <?= managerName || 'Not assigned' ?></p>
+          <h5 class="text-primary">Welcome</h5>
+          <p class="fw-bold mb-1">
+            <?= emp.first_name ?>
+            <?= emp.last_name ?>
+          </p>
+          <p class="text-muted mb-0">
+            <i class="bi bi-person-badge"></i>
+            Manager:
+            <?= managerName || 'Not assigned' ?>
+          </p>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100 text-center">
+      <!-- Logged In -->
+      <div class="card shadow-sm mb-3 text-center">
         <div class="card-body">
           <h6 class="text-muted">Logged In</h6>
-          <p class="fw-bold"><?= loginTime.toLocaleString() ?></p>
-          <p class="text-info mb-0">Elapsed: <?= elapsedMinutes ?> minutes</p>
+          <p class="fw-bold">
+            <?= loginTime.toLocaleString() ?>
+          </p>
+          <span class="text-info small">
+            <i class="bi bi-clock-history"></i> Elapsed:
+            <?= elapsedMinutes ?> min
+          </span>
         </div>
       </div>
-    </div>
 
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100 text-center">
+      <!-- Ticket Stats -->
+      <div class="card shadow-sm mb-3 text-center">
         <div class="card-body">
           <h6 class="text-muted">Ticket Stats</h6>
-          <p class="mb-1">Today Assigned: <span class="fw-bold"><?= stats.today_assigned ?></span></p>
-          <p class="mb-0">Pending: <span class="fw-bold text-danger"><?= stats.pending ?></span></p>
+          <p>Today Assigned: <span class="fw-bold text-primary">
+              <?= stats.today_assigned ?>
+            </span></p>
+          <p>Pending: <span class="fw-bold text-danger">
+              <?= stats.pending ?>
+            </span></p>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Pie Chart: My Tickets by Status -->
-  <div class="row g-3 mb-4">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold">My Tickets by Status</div>
-        <div class="card-body">
-          <div class="row align-items-center">
-            <div class="col-md-6" style="height: 260px;">
-              <canvas id="myTicketsChart"></canvas>
-            </div>
-            <div class="col-md-6">
-              <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Open</span><span class="badge bg-secondary" id="c_open"><?= chart.open ?></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>In Progress</span><span class="badge bg-secondary" id="c_inp"><?= chart.in_progress ?></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Resolved</span><span class="badge bg-secondary" id="c_res"><?= chart.resolved ?></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                  <span>Closed</span><span class="badge bg-secondary" id="c_cls"><?= chart.closed ?></span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <!-- safe data for JS -->
-          <div id="chartData"
-               data-open="<?= chart.open ?>"
-               data-inprogress="<?= chart.in_progress ?>"
-               data-resolved="<?= chart.resolved ?>"
-               data-closed="<?= chart.closed ?>"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tickets section -->
-  <div class="row g-3">
-    <!-- Assigned Tickets -->
-    <div class="col-lg-8">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold">My Tickets</div>
-        <div class="list-group list-group-flush" style="max-height:60vh; overflow:auto;">
+    <!-- Middle Column (col-6) -->
+    <div class="col-md-8">
+      <!-- My Tickets -->
+      <div class="card shadow-sm mb-2">
+        <div class="card-header fw-bold bg-light">My Tickets</div>
+        <div class="list-group list-group-flush" style="max-height:75vh; overflow:auto;">
           <? if (assigned.length) { ?>
-            <? assigned.forEach(t => { ?>
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                  <span><strong>#<?= t.id ?></strong> · <?= t.subject ?></span>
-                  <span class="badge bg-secondary"><?= t.priority ?></span>
-                </div>
-                <div class="small text-muted">
-                  Status: <?= t.status ?> · Assigned <?= t.age_hours ?>h ago
-                </div>
-              </div>
-            <? }) ?>
+          <? assigned.forEach(t => { ?>
+          <a href="/employee/tickets/<?= t.id ?>" class="list-group-item list-group-item-action">
+            <div class="d-flex justify-content-between">
+              <span><strong>#
+                  <?= t.id ?>
+                </strong> ·
+                <?= t.subject ?>
+              </span>
+              <span class="badge bg-secondary">
+                <?= t.priority ?>
+              </span>
+            </div>
+            <div class="small text-muted">Status:
+              <?= t.status ?> · Updated
+              <?= t.age_hours ?>h ago
+            </div>
+          </a>
+          <? }) ?>
           <? } else { ?>
-            <div class="list-group-item text-muted">No tickets assigned.</div>
+          <div class="list-group-item text-muted">No tickets assigned.</div>
+          <? } ?>
+        </div>
+      </div>
+
+      <!-- Unassigned Tickets -->
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold bg-light">Unassigned Tickets</div>
+        <div class="list-group list-group-flush" style="max-height:50vh; overflow:auto;">
+          <? if (unassigned.length) { ?>
+          <? unassigned.forEach(t => { ?>
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <a href="/employee/tickets/<?= t.id ?>" class="fw-bold text-decoration-none">#
+                <?= t.id ?>
+              </a>
+              <div class="small text-muted">
+                <?= t.subject ?>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-success self-assign" data-ticket-id="<?= t.id ?>">
+              <i class="bi bi-hand-index-thumb"></i> Take
+            </button>
+          </div>
+          <? }) ?>
+          <? } else { ?>
+          <div class="list-group-item text-muted">No unassigned tickets.</div>
           <? } ?>
         </div>
       </div>
     </div>
 
-    <!-- Unassigned Tickets -->
-    <div class="col-lg-4">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold">Unassigned Tickets (Top 10)</div>
-        <div class="list-group list-group-flush" style="max-height:60vh; overflow:auto;">
-          <? if (unassigned.length) { ?>
-            <? unassigned.forEach(t => { ?>
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                  <span><strong>#<?= t.id ?></strong> · <?= t.subject ?></span>
-                  <span class="badge bg-warning text-dark"><?= t.priority ?></span>
-                </div>
-                <div class="small text-muted">
-                  Created at <?= new Date(t.created_at).toLocaleString() ?>
-                </div>
-              </div>
-            <? }) ?>
-          <? } else { ?>
-            <div class="list-group-item text-muted">No unassigned tickets.</div>
-          <? } ?>
+    <!-- Right Column (col-3) -->
+    <div class="col-md-2">
+      <!-- My Tickets by Status -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-header fw-bold bg-light">My Tickets by Status</div>
+        <div class="card-body">
+          <canvas id="myTicketsChart" style="max-height:180px;"></canvas>
+          <div id="chartData" data-open="<?= chart.open ?>" data-inprogress="<?= chart.in_progress ?>"
+            data-resolved="<?= chart.resolved ?>" data-closed="<?= chart.closed ?>"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Chart.js (CDN) -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script type="module" src="/js/employee.js"></script>
