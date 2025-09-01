@@ -75,7 +75,7 @@ async function dashboard(req, res) {
                        NULLIF(u.username,''), u.email) AS label
          FROM employees e
          JOIN users u ON u.id = e.user_id
-        WHERE u.client_id = ? AND u.role = 'employee'
+        WHERE u.client_id = ? AND employment_type = 'internal'
         ORDER BY label ASC`,
       [clientId]
     );
@@ -89,7 +89,7 @@ async function dashboard(req, res) {
          FROM tickets t
     LEFT JOIN employees ae ON ae.id = t.assigned_to
     LEFT JOIN users au ON au.id = ae.user_id
-        WHERE t.client_id = ?
+        WHERE t.client_id = ? and t.status != 'closed'
         ORDER BY t.id DESC
         LIMIT 30`,
       [clientId]
@@ -103,10 +103,24 @@ async function dashboard(req, res) {
       [clientId]
     );
 
+    const [[{ closed_tickets = 0 } = {}]] = await pool.query(
+      `SELECT COUNT(*) AS closed_tickets
+         FROM tickets
+        WHERE client_id=? AND status = 'closed'`,
+      [clientId]
+    );
+
+    const [[{ arachived_tickets = 0 } = {}]] = await pool.query(
+      `SELECT COUNT(*) AS archived
+         FROM tickets
+        WHERE client_id=? AND status = 'arachived'`,
+      [clientId]
+    );
+
     const [[{ total_employees = 0 } = {}]] = await pool.query(
       `SELECT COUNT(*) AS total_employees
-         FROM users
-        WHERE client_id=? AND role='employee'`,
+         FROM employees e JOIN users u on u.id = e.user_id
+        WHERE u.client_id=1 AND e.employment_type = 'internal'`,
       [clientId]
     );
 
@@ -144,6 +158,8 @@ async function dashboard(req, res) {
         total_employees,
         online_employees,
         offline_employees,
+        closed_tickets,
+        arachived_tickets,
         sla
       }
     });
@@ -249,7 +265,7 @@ async function assignTicket(req, res) {
       `SELECT e.id
          FROM employees e
          JOIN users u ON u.id = e.user_id
-        WHERE e.id=? AND u.client_id=? AND u.role='employee'
+        WHERE e.id=? AND u.client_id=? AND u.role='employee' AND employment_type = 'internal'
         LIMIT 1`,
       [employee_id, clientId]
     );
@@ -295,6 +311,7 @@ async function createEmployee(req, res) {
   const u = req.user;
   const clientId = u.client_id;
   const { username, email, password, first_name, last_name, manager_id } = req.body || {};
+  console.log(req.body);
   if (!email || !password) return res.status(400).json({ error: "email and password are required." });
 
   try {
@@ -303,10 +320,10 @@ async function createEmployee(req, res) {
       `SELECT e.id AS employee_id
          FROM employees e
          JOIN users ux ON ux.id = e.user_id
-        WHERE ux.client_id=? AND ux.role='manager'`,
+        WHERE ux.client_id=? AND ux.role='manager' AND e.employment_type = 'internal'`,
       [clientId]
     );
-    const count = mgrRows.length;
+    const count = mgrRows.length; 
 
     if (count === 0) {
       return res.status(400).json({ error: "Create a manager first before adding employees." });
@@ -365,13 +382,12 @@ async function listManagers(req, res) {
   const clientId = u.client_id;
   try {
     const [managers] = await pool.query(
-      `SELECT e.id AS manager_employee_id,
-              COALESCE(CONCAT(e.first_name,' ',e.last_name),
-                       NULLIF(u.username,''), u.email) AS label
-         FROM employees e
-         JOIN users u ON u.id = e.user_id
-        WHERE u.client_id=? AND u.role='manager'
-        ORDER BY label ASC`,
+     `SELECT e.id AS manager_employee_id,
+        COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS label
+      FROM employees e
+      JOIN users u ON u.id = e.user_id
+      WHERE u.client_id=? AND u.role='manager' AND e.employment_type='internal'
+      ORDER BY label ASC`,
       [clientId]
     );
     res.json({ success: true, managers });
@@ -581,6 +597,98 @@ async function updateTicketComment(req, res) {
   }
 }
 
+// === Employees Directory (for dashboard modal) ====================
+
+// Get all employees of this client
+async function listEmployees(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
+  try {
+    const [rows] = await pool.query(
+      `SELECT e.id AS employee_id,
+              e.first_name, e.last_name, e.position, e.manager_id,
+              u.email, u.username, u.role, e.employment_type,
+              COALESCE(CONCAT(m.first_name,' ',m.last_name), mu.email) AS manager_label
+         FROM employees e
+         JOIN users u ON u.id = e.user_id
+    LEFT JOIN employees m ON m.id = e.manager_id
+    LEFT JOIN users mu ON mu.id = m.user_id
+        WHERE u.client_id=? AND e.employment_type='internal'
+        ORDER BY e.first_name, e.last_name`,
+      [clientId]
+    );
+    res.json({ success: true, employees: rows });
+  } catch (err) {
+    console.error("listEmployees error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
+// Get single employee profile
+async function getEmployee(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
+  const { id } = req.params;
+  try {
+    const [[row]] = await pool.query(
+      `SELECT e.id AS employee_id,
+              e.first_name, e.last_name, e.position, e.manager_id,
+              u.email, u.username, u.role, e.employment_type
+         FROM employees e
+         JOIN users u ON u.id = e.user_id
+        WHERE e.id=? AND u.client_id=? AND e.employment_type='internal'
+        LIMIT 1`,
+      [id, clientId]
+    );
+    if (!row) return res.status(404).json({ success: false, error: "Employee not found" });
+    res.json({ success: true, employee: row });
+  } catch (err) {
+    console.error("getEmployee error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
+// Update employee profile (basic fields)
+async function updateEmployee(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
+  const { id } = req.params;
+  const { first_name, last_name, email, position, manager_id } = req.body || {};
+
+  try {
+    // verify employee belongs to client
+    const [[emp]] = await pool.query(
+      `SELECT e.id, u.id AS user_id
+         FROM employees e
+         JOIN users u ON u.id = e.user_id
+        WHERE e.id=? AND u.client_id=? AND e.employment_type='internal'
+        LIMIT 1`,
+      [id, clientId]
+    );
+    if (!emp) return res.status(404).json({ success: false, error: "Employee not found" });
+
+    // update users.email
+    if (email) {
+      await pool.query(`UPDATE users SET email=? WHERE id=?`, [email, emp.user_id]);
+    }
+
+    // update employees table
+    await pool.query(
+      `UPDATE employees SET first_name=?, last_name=?, position=?, manager_id=? WHERE id=?`,
+      [first_name || null, last_name || null, position || null, manager_id || null, id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("updateEmployee error:", err);
+    if (err && err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ success: false, error: "Email already exists" });
+    }
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
+
 
 
 module.exports = {
@@ -598,5 +706,9 @@ module.exports = {
   attachmentsMiddleware,
   addTicketAttachments,
   updateTicketStatus,
-  updateTicketComment
+  updateTicketComment,
+  listEmployees,
+  getEmployee,
+  updateEmployee,
+  
 };

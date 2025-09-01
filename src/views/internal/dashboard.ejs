@@ -1,168 +1,177 @@
 <div class="container-fluid py-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Internal Admin Dashboard</h1>
-    <span class="badge bg-primary text-uppercase">Internal Admin</span>
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Internal Admin Dashboard</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateManager">
+        <i class="bi bi-person-plus"></i> Manager
+      </button>
+      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateEmployee">
+        <i class="bi bi-person-plus-fill"></i> Employee
+      </button>
+    </div>
   </div>
 
-  <div class="row g-3">
-    <!-- Col 1: Actions (2 cols) -->
-    <div class="col-12 col-lg-2">
-      <div class="card shadow-sm">
-        <div class="card-header fw-bold">Quick Actions</div>
-        <div class="card-body d-grid gap-2">
-          <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateManager">
-            Create Manager
-          </button>
-          <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateEmployee">
-            Create Employee
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Col 2: Overview (5 cols) -->
-    <div class="col-12 col-lg-5">
-      <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold">Overview</div>
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="open">
         <div class="card-body">
-          <div class="row text-center">
-            <div class="col-6 col-lg-3 mb-3">
-              <div class="fw-bold">Open Tickets</div>
-              <div class="display-6" id="kpiOpenTickets"><?= summary.open_tickets ?></div>
-            </div>
-            <div class="col-6 col-lg-3 mb-3">
-              <div class="fw-bold">Total Employees</div>
-              <div class="display-6" id="kpiTotalEmployees"><?= summary.total_employees ?></div>
-            </div>
-            <div class="col-6 col-lg-3 mb-3">
-              <div class="fw-bold">Logged In</div>
-              <div class="display-6" id="kpiOnline"><?= summary.online_employees ?></div>
-            </div>
-            <div class="col-6 col-lg-3 mb-3">
-              <div class="fw-bold">Logged Out</div>
-              <div class="display-6" id="kpiOffline"><?= summary.offline_employees ?></div>
-            </div>
-          </div>
-
-          <hr>
-
-          <div class="row text-center">
-            <div class="col-6 col-md-3 mb-3">
-              <div class="fw-bold">Low</div>
-              <div class="h3" id="slaLow"><?= summary.sla.low ?></div>
-            </div>
-            <div class="col-6 col-md-3 mb-3">
-              <div class="fw-bold">Medium</div>
-              <div class="h3" id="slaMedium"><?= summary.sla.medium ?></div>
-            </div>
-            <div class="col-6 col-md-3 mb-3">
-              <div class="fw-bold">High</div>
-              <div class="h3" id="slaHigh"><?= summary.sla.high ?></div>
-            </div>
-            <div class="col-6 col-md-3 mb-3">
-              <div class="fw-bold">Urgent</div>
-              <div class="h3" id="slaUrgent"><?= summary.sla.urgent ?></div>
-            </div>
-          </div>
+          <i class="bi bi-ticket-detailed display-6 text-info"></i>
+          <div class="fw-bold mt-2">Open Tickets</div>
+          <div class="h3 mb-0"><?= summary.open_tickets ?></div>
         </div>
       </div>
     </div>
+    <div class="col-6 col-lg-3">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="closed">
+        <div class="card-body">
+          <i class="bi bi-check2-circle display-6 text-success"></i>
+          <div class="fw-bold mt-2">Closed Tickets</div>
+          <div class="h3 mb-0"><?= summary.closed_tickets ?></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="archived">
+        <div class="card-body">
+          <i class="bi bi-archive display-6 text-secondary"></i>
+          <div class="fw-bold mt-2">Archived Tickets</div>
+          <div class="h3 mb-0"><?= summary?.arachived_tickets || 0 ?></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card kpi-card shadow-sm text-center clickable" data-bs-toggle="modal" data-bs-target="#employeeListModal">
+        <div class="card-body">
+          <i class="bi bi-people-fill display-6 text-dark"></i>
+          <div class="fw-bold mt-2">Employees</div>
+          <div class="h3 mb-0"><?= summary.total_employees ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- Col 3: Tickets (5 cols) -->
-    <div class="col-12 col-lg-5">
+  <!-- SLA Breakdown -->
+  <div class="row g-3 mb-4 text-center">
+    <div class="col-6 col-md-3">
       <div class="card shadow-sm h-100">
-        <div class="card-header fw-bold">Tickets</div>
-        <div class="list-group list-group-flush" id="ticketList" style="max-height: 70vh; overflow:auto;">
-          <? if (tickets && tickets.length) { ?>
-            <? tickets.forEach(t => { ?>
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                  <strong>
-                    <a class="text-decoration-none ticket-link"
-                       href="/internal/tickets/<?= t.id ?>"
-                       target="_blank" rel="noopener">#<?= t.id ?></a>
-                    ·
-                    <a class="text-decoration-none"
-                       href="/internal/tickets/<?= t.id ?>"
-                       target="_blank" rel="noopener"><?= (t.subject || 'Ticket') ?></a>
-                  </strong>
-                  <span class="badge bg-secondary text-uppercase"><?= t.priority || 'n/a' ?></span>
-                </div>
-                <div class="small text-muted mb-2">
-                  Status: <?= t.status || 'n/a' ?> · Assignee: <?= t.assignee_label || 'Unassigned' ?>
-                </div>
-                <div class="d-flex gap-2">
-                  <select class="form-select form-select-sm assign-select" data-ticket-id="<?= t.id ?>">
-                    <option value="">Assign to…</option>
-                    <? assigns.employees.forEach(emp => { ?>
-                      <option value="<?= emp.employee_id ?>"><?= emp.label ?></option>
-                    <? }) ?>
-                  </select>
-                  <button class="btn btn-sm btn-primary do-assign" data-ticket-id="<?= t.id ?>">Reassign</button>
-                </div>
-              </div>
-            <? }) ?>
-          <? } else { ?>
-            <div class="list-group-item text-muted">No tickets found.</div>
-          <? } ?>
+        <div class="card-body">
+          <div class="fw-bold text-success">Low</div>
+          <div class="h3" id="slaLow"><?= summary.sla.low ?></div>
         </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-bold text-info">Medium</div>
+          <div class="h3" id="slaMedium"><?= summary.sla.medium ?></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-bold text-warning">High</div>
+          <div class="h3" id="slaHigh"><?= summary.sla.high ?></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-bold text-danger">Urgent</div>
+          <div class="h3" id="slaUrgent"><?= summary.sla.urgent ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets List -->
+  <div class="card shadow-sm">
+    <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+      <span>Tickets</span>
+      <small class="text-muted" id="ticketFilterLabel">Showing latest 30</small>
+    </div>
+    <div class="list-group list-group-flush" id="ticketList" style="max-height: 70vh; overflow:auto;">
+      <? if (tickets && tickets.length) { ?>
+      <? tickets.forEach(t => { ?>
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <strong>
+            <a class="text-decoration-none ticket-link" href="/internal/tickets/<?= t.id ?>" target="_blank">#<?= t.id ?></a>
+            · <?= (t.subject || 'Ticket') ?>
+          </strong>
+          <span class="badge text-uppercase 
+            <? if (t.priority === 'urgent') { ?> bg-danger 
+            <? } else if (t.priority === 'high') { ?> bg-warning
+            <? } else if (t.priority === 'medium') { ?> bg-info
+            <? } else if (t.priority === 'low') { ?> bg-success
+            <? } else { ?> bg-secondary
+            <? } ?>">
+            <?= t.priority || 'n/a' ?>
+          </span>
+        </div>
+        <div class="small text-muted mb-2">
+          Status: <?= t.status || 'n/a' ?> · Assignee: <?= t.assignee_label || 'Unassigned' ?>
+        </div>
+      </div>
+      <? }) ?>
+      <? } else { ?>
+      <div class="list-group-item text-muted">No tickets found.</div>
+      <? } ?>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Employee Directory Modal ===== -->
+<div class="modal fade" id="employeeListModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Employees</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-hover align-middle" id="employeeTable">
+          <thead class="table-light">
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Position</th><th>Manager</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ===== Modals ===== -->
-
-<!-- Create Manager Modal -->
-<div class="modal fade" id="modalCreateManager" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
+<!-- ===== Edit Employee Modal ===== -->
+<div class="modal fade" id="editEmployeeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" id="editEmployeeForm">
       <div class="modal-header">
-        <h5 class="modal-title">Create Manager</h5>
-        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title">Edit Employee</h5>
+        <button class="btn-close" type="button" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <form id="createManagerForm" class="vstack gap-2">
-          <input class="form-control" name="first_name" placeholder="First name (optional)">
-          <input class="form-control" name="last_name" placeholder="Last name (optional)">
-          <input class="form-control" name="username" placeholder="Username (optional)">
-          <input class="form-control" name="email" type="email" placeholder="Email" required>
-          <input class="form-control" name="password" type="password" placeholder="Password" required>
-          <button class="btn btn-warning" type="submit">Create Manager</button>
-        </form>
-        <div id="managerMsg" class="mt-2 small"></div>
+        <input type="hidden" name="id" id="empId">
+        <input class="form-control mb-2" name="first_name" id="empFirstName" placeholder="First name">
+        <input class="form-control mb-2" name="last_name" id="empLastName" placeholder="Last name">
+        <input class="form-control mb-2" name="email" id="empEmail" placeholder="Email">
+        <input class="form-control mb-2" name="position" id="empPosition" placeholder="Position">
+        <select class="form-select" name="manager_id" id="empManager"></select>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Create Employee Modal -->
-<div class="modal fade" id="modalCreateEmployee" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Create Employee</h5>
-        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Save</button>
       </div>
-      <div class="modal-body">
-        <div class="alert alert-info py-2 px-3 mb-2" id="noManagerAlert" style="display:none;">
-          Create a manager first before adding employees.
-        </div>
-        <form id="createEmployeeForm" class="vstack gap-2">
-          <input class="form-control" name="first_name" placeholder="First name (optional)">
-          <input class="form-control" name="last_name" placeholder="Last name (optional)">
-          <input class="form-control" name="username" placeholder="Username (optional)">
-          <input class="form-control" name="email" type="email" placeholder="Email" required>
-          <input class="form-control" name="password" type="password" placeholder="Password" required>
-          <select class="form-select" name="manager_id" id="employeeManagerSelect" style="display:none;">
-            <option value="">Select manager…</option>
-          </select>
-          <button class="btn btn-dark" type="submit" id="createEmployeeBtn">Create Employee</button>
-        </form>
-        <div id="employeeMsg" class="mt-2 small"></div>
-      </div>
-    </div>
+    </form>
   </div>
 </div>
 
 <script type="module" src="/js/internal.js"></script>
+
+<style>
+  .kpi-card { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+</style>

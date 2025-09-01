@@ -119,7 +119,7 @@ CREATE TABLE `tickets` (
     `subject` VARCHAR(200) NOT NULL,
     `description` TEXT,
     `priority` ENUM('low','medium','high','urgent') DEFAULT 'medium',
-    `status` ENUM('open','in_progress','resolved','closed') DEFAULT 'open',
+    `status` ENUM('open','in_progress','resolved','closed', 'archived', 'pending') DEFAULT 'open',
     `sla_policy_id` INT NULL,
     `due_at` DATETIME NULL,
     `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom',
@@ -133,8 +133,9 @@ CREATE TABLE `tickets` (
     FOREIGN KEY (`sla_policy_id`) REFERENCES `sla_policies`(`id`)
 );
 
-ALTER TABLE `tickets`
-  ADD COLUMN `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom' AFTER `due_at`;
+ALTER TABLE `tickets` ADD COLUMN `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom' AFTER `due_at`;
+
+ALTER TABLE `ticketnexus`.`tickets` MODIFY COLUMN `status` ENUM('open','in_progress','resolved','closed', 'archived', 'pending') DEFAULT 'open';
 
 
 -- ALTER TABLE tickets ADD COLUMN `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

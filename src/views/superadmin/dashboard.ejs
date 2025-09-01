@@ -160,6 +160,9 @@
         </div>
         <div class="modal-body">
           <form id="createInternalAdminForm" class="vstack gap-2">
+            <select class="form-select" name="clientId" id="clientSelectForInternal" required>
+              <option value="">Select a client…</option>
+            </select>
             <input class="form-control" name="email" type="email" placeholder="Email" required />
             <input class="form-control" name="password" type="password" placeholder="Password" required />
             <input class="form-control" name="first_name" placeholder="First name (optional)" />
