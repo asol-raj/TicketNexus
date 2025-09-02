@@ -38,12 +38,14 @@ router.post(
 );
 router.put("/tickets/:id/status", requireJWT, requireInternalAdmin, internal.updateTicketStatus);
 
+
 // Edit an existing comment (author-only)
 router.put("/tickets/:id/comments/:commentId", requireJWT, requireInternalAdmin, internal.updateTicketComment);
 // Employee directory
 router.get("/data/employees", requireJWT, requireInternalAdmin, internal.listEmployees);
 router.get("/data/employees/:id", requireJWT, requireInternalAdmin, internal.getEmployee);
 router.put("/employees/:id", requireJWT, requireInternalAdmin, internal.updateEmployee);
+// router.post("/tickets/:id/archive", requireJWT, requireInternalAdmin, internal.archiveTicket);
 
 
 

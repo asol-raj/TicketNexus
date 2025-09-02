@@ -80,10 +80,10 @@ function renderTicketsTable(tickets) {
         ? "bg-primary"
         : t.status === "in_progress"
           ? "bg-warning text-dark"
-          : t.status === "resolved"
+          : t.status === "closed"
             ? "bg-success"
             : "bg-secondary"
-      } text-capitalize">${t.status || "-"}</span>
+      } text-uppercase">${t.status || "-"}</span>
       </td>
       <td>${t.assignee_label || "Unassigned"}</td>
       <td>${t.created_at ? new Date(t.created_at).toLocaleString() : "-"}</td>
@@ -127,23 +127,24 @@ function renderRecentList(tickets) {
   }
 }
 
-async function refreshTickets(filter = "all") {
+async function refreshTickets(filter = "open") {
   try {
     const data = await getJSON("/client-admin/data/tickets");
     let rows = data.tickets || [];
     if (filter === "open") rows = rows.filter(x => x.status === "open");
     if (filter === "in_progress") rows = rows.filter(x => x.status === "in_progress");
-    if (filter === "resolved") rows = rows.filter(x => x.status === "resolved");
+    if (filter === "archived") rows = rows.filter(x => x.status === "archived");
     if (filter === "closed") rows = rows.filter(x => x.status === "closed");
     renderTicketsTable(rows);
     renderRecentList(data.tickets || []);
   } catch { }
 }
+
 function bindFilters() {
   document.getElementById("fltAll")?.addEventListener("click", () => refreshTickets("all"));
   document.getElementById("fltOpen")?.addEventListener("click", () => refreshTickets("open"));
   document.getElementById("fltInProg")?.addEventListener("click", () => refreshTickets("in_progress"));
-  document.getElementById("fltResolved")?.addEventListener("click", () => refreshTickets("resolved"));
+  document.getElementById("fltArchived")?.addEventListener("click", () => refreshTickets("archived"));
   document.getElementById("fltClosed")?.addEventListener("click", () => refreshTickets("closed"));
 }
 

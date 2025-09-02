@@ -1,7 +1,7 @@
 <div class="container-fluid py-3">
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Internal Admin Dashboard</h2>
+    <h2 class="mb-0">Dashboard</h2>
     <div class="d-flex gap-2">
       <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateManager">
         <i class="bi bi-person-plus"></i> Manager
@@ -14,39 +14,70 @@
 
   <!-- KPI Cards -->
   <div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-lg-2">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="all">
+        <div class="card-body">
+          <i class="bi bi-list-task display-6 text-primary"></i>
+          <div class="fw-bold mt-2">All Tickets</div>
+          <div class="h3 mb-0">
+            <?= summary.total_tickets ?>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
       <div class="card kpi-card shadow-sm text-center clickable" data-filter="open">
         <div class="card-body">
           <i class="bi bi-ticket-detailed display-6 text-info"></i>
           <div class="fw-bold mt-2">Open Tickets</div>
-          <div class="h3 mb-0"><?= summary.open_tickets ?></div>
+          <div class="h3 mb-0" id="openCount">
+            <?= summary?.open_tickets || 0 ?>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-lg-2">
       <div class="card kpi-card shadow-sm text-center clickable" data-filter="closed">
         <div class="card-body">
           <i class="bi bi-check2-circle display-6 text-success"></i>
           <div class="fw-bold mt-2">Closed Tickets</div>
-          <div class="h3 mb-0"><?= summary.closed_tickets ?></div>
+          <div class="h3 mb-0" id="closedCount">
+            <?= summary?.closed_tickets || 0 ?>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-lg-2">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="expired">
+        <div class="card-body">
+          <i class="bi bi-ban display-6 text-danger"></i>
+          <div class="fw-bold mt-2">Expired</div>
+          <div class="h3 mb-0" id="expiredCount">
+            <?= summary?.expired_tickets || 0 ?>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
       <div class="card kpi-card shadow-sm text-center clickable" data-filter="archived">
         <div class="card-body">
           <i class="bi bi-archive display-6 text-secondary"></i>
-          <div class="fw-bold mt-2">Archived Tickets</div>
-          <div class="h3 mb-0"><?= summary?.arachived_tickets || 0 ?></div>
+          <div class="fw-bold mt-2">Archived</div>
+          <div class="h3 mb-0" id="archivedCount">
+            <?= summary?.archived_tickets || 0 ?>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-lg-3">
-      <div class="card kpi-card shadow-sm text-center clickable" data-bs-toggle="modal" data-bs-target="#employeeListModal">
+    <div class="col-6 col-lg-2">
+      <div class="card kpi-card shadow-sm text-center clickable" data-bs-toggle="modal"
+        data-bs-target="#employeeListModal">
         <div class="card-body">
           <i class="bi bi-people-fill display-6 text-dark"></i>
           <div class="fw-bold mt-2">Employees</div>
-          <div class="h3 mb-0"><?= summary.total_employees ?></div>
+          <div class="h3 mb-0">
+            <?= summary.total_employees ?>
+          </div>
         </div>
       </div>
     </div>
@@ -54,35 +85,43 @@
 
   <!-- SLA Breakdown -->
   <div class="row g-3 mb-4 text-center">
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <div class="fw-bold text-success">Low</div>
-          <div class="h3" id="slaLow"><?= summary.sla.low ?></div>
+          <div class="h3" id="slaLow">
+            <?= summary.sla.low ?>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <div class="fw-bold text-info">Medium</div>
-          <div class="h3" id="slaMedium"><?= summary.sla.medium ?></div>
+          <div class="h3" id="slaMedium">
+            <?= summary.sla.medium ?>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <div class="fw-bold text-warning">High</div>
-          <div class="h3" id="slaHigh"><?= summary.sla.high ?></div>
+          <div class="h3" id="slaHigh">
+            <?= summary.sla.high ?>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-2">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <div class="fw-bold text-danger">Urgent</div>
-          <div class="h3" id="slaUrgent"><?= summary.sla.urgent ?></div>
+          <div class="h3" id="slaUrgent">
+            <?= summary.sla.urgent ?>
+          </div>
         </div>
       </div>
     </div>
@@ -92,29 +131,61 @@
   <div class="card shadow-sm">
     <div class="card-header fw-bold d-flex justify-content-between align-items-center">
       <span>Tickets</span>
-      <small class="text-muted" id="ticketFilterLabel">Showing latest 30</small>
+      <small class="text-muted" id="ticketFilterLabel">Showing latest 100</small>
     </div>
     <div class="list-group list-group-flush" id="ticketList" style="max-height: 70vh; overflow:auto;">
       <? if (tickets && tickets.length) { ?>
       <? tickets.forEach(t => { ?>
-      <div class="list-group-item">
-        <div class="d-flex justify-content-between">
-          <strong>
-            <a class="text-decoration-none ticket-link" href="/internal/tickets/<?= t.id ?>" target="_blank">#<?= t.id ?></a>
-            · <?= (t.subject || 'Ticket') ?>
-          </strong>
-          <span class="badge text-uppercase 
-            <? if (t.priority === 'urgent') { ?> bg-danger 
-            <? } else if (t.priority === 'high') { ?> bg-warning
-            <? } else if (t.priority === 'medium') { ?> bg-info
-            <? } else if (t.priority === 'low') { ?> bg-success
-            <? } else { ?> bg-secondary
-            <? } ?>">
-            <?= t.priority || 'n/a' ?>
-          </span>
-        </div>
-        <div class="small text-muted mb-2">
-          Status: <?= t.status || 'n/a' ?> · Assignee: <?= t.assignee_label || 'Unassigned' ?>
+      <div class="list-group-item <? if (t.is_expired) { ?> bg-danger-subtled <? } ?>">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>
+              <a class="text-decoration-none ticket-link" href="/internal/tickets/<?= t.id ?>" target="_blank">
+                #
+                <?= t.id ?> ·
+                <?= (t.subject || 'Ticket') ?>
+              </a>
+            </strong>
+            <div class="small text-muted">
+              Status:
+              <? if (t.is_expired) { ?>
+              <span class="text-danger fw-bold">Expired</span>
+              <? } else { ?>
+              <?= t.status || 'n/a' ?>
+              <? } ?>
+              · Assignee:
+              <?= t.assignee_label || 'Unassigned' ?>
+
+              <? if (t.status === 'closed') { ?>
+              · <a href="#" class="text-decoration-none text-danger archive-link" data-id="<?= t.id ?>">
+                Mark Archived
+              </a>
+              <? } ?>
+            </div>
+          </div>
+          <div class="text-end">
+            <!-- Priority badge -->
+            <span class="badge text-uppercase 
+                <? if (t.priority === 'urgent') { ?> bg-danger 
+                <? } else if (t.priority === 'high') { ?> bg-warning
+                <? } else if (t.priority === 'medium') { ?> bg-info
+                <? } else if (t.priority === 'low') { ?> bg-success
+                <? } else { ?> bg-secondary <? } ?>">
+              <?= t.priority || 'n/a' ?>
+            </span>
+            <br>
+            <!-- Due / Expired badge -->
+            <? if (t.is_expired) { ?>
+            <span class="badge bg-danger mt-1">Expired</span>
+            <? } else if (t.due_at) { ?>
+            <span class="badge bg-secondary mt-1">
+              Due:
+              <?= new Date(t.due_at).toLocaleDateString() ?>
+            </span>
+            <? } else { ?>
+            <span class="badge bg-light text-muted mt-1">No Due Date</span>
+            <? } ?>
+          </div>
         </div>
       </div>
       <? }) ?>
@@ -123,11 +194,13 @@
       <? } ?>
     </div>
   </div>
+
+
 </div>
 
 <!-- ===== Employee Directory Modal ===== -->
 <div class="modal fade" id="employeeListModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-fullscreen">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Employees</h5>
@@ -136,7 +209,14 @@
       <div class="modal-body">
         <table class="table table-hover align-middle" id="employeeTable">
           <thead class="table-light">
-            <tr><th>Name</th><th>Email</th><th>Role</th><th>Position</th><th>Manager</th><th></th></tr>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Position</th>
+              <th>Manager</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -169,9 +249,69 @@
   </div>
 </div>
 
+<!-- Create Manager Modal -->
+<div class="modal fade" id="modalCreateManager" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Manager</h5>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createManagerForm" class="vstack gap-2">
+          <input class="form-control" name="first_name" placeholder="First name (optional)">
+          <input class="form-control" name="last_name" placeholder="Last name (optional)">
+          <input class="form-control" name="username" placeholder="Username (optional)">
+          <input class="form-control" name="email" type="email" placeholder="Email" required>
+          <input class="form-control" name="password" type="password" placeholder="Password" required>
+          <button class="btn btn-warning" type="submit">Create Manager</button>
+        </form>
+        <div id="managerMsg" class="mt-2 small"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Employee Modal -->
+<div class="modal fade" id="modalCreateEmployee" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Employee</h5>
+        <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info py-2 px-3 mb-2" id="noManagerAlert" style="display:none;">
+          Create a manager first before adding employees.
+        </div>
+        <form id="createEmployeeForm" class="vstack gap-2">
+          <input class="form-control" name="first_name" placeholder="First name (optional)">
+          <input class="form-control" name="last_name" placeholder="Last name (optional)">
+          <input class="form-control" name="username" placeholder="Username (optional)">
+          <input class="form-control" name="email" type="email" placeholder="Email" required>
+          <input class="form-control" name="password" type="password" placeholder="Password" required>
+          <select class="form-select" name="manager_id" id="employeeManagerSelect" style="display:none;">
+            <option value="">Select manager…</option>
+          </select>
+          <!-- <input type="hidden" name="mamager_id" id="singleManagerId"> -->
+          <button class="btn btn-dark" type="submit" id="createEmployeeBtn">Create Employee</button>
+        </form>
+        <div id="employeeMsg" class="mt-2 small"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="/js/internal.js"></script>
 
 <style>
-  .kpi-card { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
-  .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+  .kpi-card {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  }
 </style>

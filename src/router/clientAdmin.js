@@ -10,6 +10,7 @@ router.get("/tickets/:id", requireJWT, requireClientAdmin, ctrl.ticketPage);
 // Data
 router.get("/data/assignees", requireJWT, requireClientAdmin, ctrl.listAssignees);
 router.get("/data/tickets", requireJWT, requireClientAdmin, ctrl.listTickets);
+router.get("/data/tickets/:status", requireJWT, requireClientAdmin, ctrl.listTicketsWithStatus);
 router.get("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.listTicketComments);
 
 // Actions
@@ -26,6 +27,11 @@ router.post("/tickets/:id/attachments",
 );
 router.put("/tickets/:id/status", requireJWT, requireClientAdmin, ctrl.updateTicketStatus); // NEW
 router.post("/client/employees/update", requireClientAdmin, ctrl.updateEmployee);
+router.post("/tickets/:id/edit", requireJWT, requireClientAdmin, ctrl.editTicket);
+router.post("/tickets/:id/discard", requireJWT, requireClientAdmin, ctrl.discardTicket);
+
+
+
 
 
 module.exports = router;

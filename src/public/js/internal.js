@@ -30,7 +30,7 @@ async function putJSON(url, data) {
 
 // --- Presence ---
 async function pingPresence() {
-  try { await putJSON("/internal/presence/ping", {}); } catch {}
+  try { await putJSON("/internal/presence/ping", {}); } catch { }
 }
 
 // --- Summary refresh ---
@@ -48,44 +48,94 @@ async function refreshSummary() {
       byId("slaHigh", s.sla.high);
       byId("slaUrgent", s.sla.urgent);
     }
-  } catch {}
+  } catch { }
 }
 
 // --- Ticket rendering ---
-function renderTickets(tickets, label) {
+function renderTickets(tickets) {
   const list = document.getElementById("ticketList");
-  const filterLabel = document.getElementById("ticketFilterLabel");
   list.innerHTML = "";
-  filterLabel.textContent = label || "Tickets";
 
-  if (!tickets || !tickets.length) {
+  if (!tickets.length) {
     list.innerHTML = `<div class="list-group-item text-muted">No tickets found.</div>`;
     return;
   }
 
   tickets.forEach(t => {
-    const badgeClass =
-      t.priority === "urgent" ? "bg-danger" :
-      t.priority === "high"   ? "bg-warning" :
-      t.priority === "medium" ? "bg-info" :
-      t.priority === "low"    ? "bg-success" :
-                                "bg-secondary";
+    const dueBadge = t.is_expired
+      ? `<span class="badge bg-danger mt-1">Expired</span>`
+      : t.due_at
+        ? `<span class="badge bg-secondary mt-1">Due: ${new Date(t.due_at).toLocaleDateString()}</span>`
+        : `<span class="badge bg-light text-muted mt-1">No Due Date</span>`;
 
-    list.innerHTML += `
-      <div class="list-group-item">
-        <div class="d-flex justify-content-between">
-          <strong>
-            <a class="text-decoration-none" href="/internal/tickets/${t.id}" target="_blank">#${t.id}</a>
-            · ${t.subject || "Ticket"}
-          </strong>
-          <span class="badge ${badgeClass} text-uppercase">${t.priority || "n/a"}</span>
+    // 👇 archive link for closed tickets only
+    const archiveLink = t.status === "closed"
+      ? ` · <a href="#" class="text-decoration-none text-danger archive-link" data-id="${t.id}">
+            Mark Archived
+          </a>`
+      : "";
+
+    const html = `
+      <div class="list-group-item ${t.is_expired ? "bg-danger-subtlex" : ""}">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong class="${t.status === "archived" ? "text-muted text-decoration-line-through" : ""}">
+              <a class="text-decoration-none ticket-link" href="/internal/tickets/${t.id}" target="_blank">
+                #${t.id}
+              </a>
+              · ${t.subject || "Ticket"}
+            </strong>
+            <div class="small text-muted">
+              Status: ${t.is_expired ? `<span class="text-danger fw-bold">Expired</span>` : (t.status || "n/a")}
+              · Assignee: ${t.assignee_label || "Unassigned"}
+              ${archiveLink}
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="badge text-uppercase ${
+              t.priority === "urgent" ? "bg-danger" :
+              t.priority === "high" ? "bg-warning" :
+              t.priority === "medium" ? "bg-info" :
+              t.priority === "low" ? "bg-success" : "bg-secondary"
+            }">
+              ${t.priority || "n/a"}
+            </span>
+            <br>${dueBadge}
+          </div>
         </div>
-        <div class="small text-muted mb-2">
-          Status: ${t.status || "n/a"} · Assignee: ${t.assignee_label || "Unassigned"}
-        </div>
-      </div>`;
+      </div>
+    `;
+    list.insertAdjacentHTML("beforeend", html);
   });
 }
+
+function updateSummary(summary) {
+  if (!summary) return;
+  document.querySelector("#openCount").textContent = summary.open_tickets || 0;
+  document.querySelector("#closedCount").textContent = summary.closed_tickets || 0;
+  document.querySelector("#archivedCount").textContent = summary.archived_tickets || 0;
+  document.querySelector("#expiredCount").textContent = summary.expired_tickets || 0;
+}
+
+let currentFilter = "open"; // default
+
+async function loadTickets(filter) {
+  currentFilter = filter;
+  try {
+    const res = await fetch(`/internal/data/tickets?status=${filter}`);
+    const data = await res.json();
+
+    if (data.success) {
+      renderTickets(data.tickets);
+      updateSummary(data.summary); // refresh KPI cards
+      document.getElementById("ticketFilterLabel").textContent = 
+        `Showing ${filter.charAt(0).toUpperCase() + filter.slice(1)} Tickets`;
+    }
+  } catch (err) {
+    console.error("loadTickets error:", err);
+  }
+}
+
 
 // --- Ticket filters ---
 function bindKpiFilters() {
@@ -251,6 +301,36 @@ function bindCreateForms() {
     return null;
   });
 }
+
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("archive-link")) {
+    e.preventDefault();
+    const ticketId = e.target.dataset.id;
+
+    if (!confirm("Are you sure you want to archive this ticket?")) return;
+
+    const res = await fetch(`/internal/tickets/${ticketId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "archived" })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      currentFilter = 'closed'
+      // ✅ Auto-refresh tickets for current filter
+      loadTickets(currentFilter);
+    } else {
+      alert("Failed to archive ticket");
+    }
+  }
+});
+
+
+
+
+
 
 // --- Init ---
 document.addEventListener("DOMContentLoaded", async () => {

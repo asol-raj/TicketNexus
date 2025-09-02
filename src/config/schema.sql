@@ -30,7 +30,6 @@ CREATE TABLE `users` (
   `admin_type` ENUM('internal','client') NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
   CONSTRAINT fk_users_client FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
 
@@ -119,11 +118,12 @@ CREATE TABLE `tickets` (
     `subject` VARCHAR(200) NOT NULL,
     `description` TEXT,
     `priority` ENUM('low','medium','high','urgent') DEFAULT 'medium',
-    `status` ENUM('open','in_progress','resolved','closed', 'archived', 'pending') DEFAULT 'open',
+    `status` ENUM('open','unassigned','in_progress','resolved', 'archived','closed','expired','discarded') DEFAULT 'open',
     `sla_policy_id` INT NULL,
     `due_at` DATETIME NULL,
     `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom',
     `resolved_at` DATETIME NULL,
+    `closed_at` DATETIME NULL,
     `sla_status` ENUM('within_sla','breached') DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -133,9 +133,14 @@ CREATE TABLE `tickets` (
     FOREIGN KEY (`sla_policy_id`) REFERENCES `sla_policies`(`id`)
 );
 
-ALTER TABLE `tickets` ADD COLUMN `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom' AFTER `due_at`;
+ALTER TABLE `tickets` MODIFY `status` 
+  ENUM('open','unassigned','in_progress','resolved', 'archived','closed','expired','discarded') DEFAULT 'open';
 
-ALTER TABLE `ticketnexus`.`tickets` MODIFY COLUMN `status` ENUM('open','in_progress','resolved','closed', 'archived', 'pending') DEFAULT 'open';
+-- ALTER TABLE `tickets` ADD COLUMN `closed_at` DATETIME NULL AFTER `resolved_at`;
+
+-- ALTER TABLE `tickets` ADD COLUMN `due_option` ENUM('today','tomorrow','this_week','next_week','custom') DEFAULT 'custom' AFTER `due_at`;
+
+-- ALTER TABLE `ticketnexus`.`tickets` MODIFY COLUMN `status` ENUM('open','in_progress','resolved','closed', 'archived', 'pending') DEFAULT 'open';
 
 
 -- ALTER TABLE tickets ADD COLUMN `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

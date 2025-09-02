@@ -63,3 +63,4 @@ SELECT t.id, t.subject, t.status, t.priority, t.created_at,
         WHERE t.client_id = 1
         ORDER BY t.id DESC;
 
+SELECT * FROM tickets;

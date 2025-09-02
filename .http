@@ -1,0 +1,3 @@
+POST http://localhost:5000/client-admin/tickets/14/discard HTTP/1.1
+content-type: application/json
+

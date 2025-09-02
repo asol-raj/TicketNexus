@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!root) return;
 
   const TICKET_ID = root.dataset.ticketId;
-  const USER_ID   = root.dataset.userId;
+  const USER_ID = root.dataset.userId;
 
   const q = (s) => document.querySelector(s);
 
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const wrap = document.createElement("div");
     wrap.className = "mb-3 border-bottom pb-2";
     wrap.dataset.commentId = c.id;
-    wrap.dataset.authorId  = c.author_id;
+    wrap.dataset.authorId = c.author_id;
     wrap.innerHTML = `
       <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== Add attachments =====
   const form = document.getElementById("addAttachmentsForm");
-  const msg  = document.getElementById("addAttMsg");
+  const msg = document.getElementById("addAttMsg");
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -137,11 +137,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="small text-muted">Uploaded just now</div>
             </div>
-            ${
-              isImg
-                ? `<a href="/attachments/${a.id}" target="_blank" class="d-block"><img src="/attachments/${a.id}" class="img-fluid rounded" alt=""></a>`
-                : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`
-            }
+            ${isImg
+            ? `<a href="/attachments/${a.id}" target="_blank" class="d-block"><img src="/attachments/${a.id}" class="img-fluid rounded" alt=""></a>`
+            : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`
+          }
           </div>`;
         // remove "No attachments" placeholder if present
         if (!grid) return;
@@ -160,31 +159,72 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===== Delete attachment (author-only; server enforces as well) =====
-document.getElementById("attachmentGrid")?.addEventListener("click", async (e) => {
-  const btn = e.target.closest(".delete-attachment");
-  if (!btn) return;
-  const id = btn.dataset.id;
-  if (!id) return;
-  if (!confirm("Delete this attachment?")) return;
+  document.getElementById("attachmentGrid")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".delete-attachment");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    if (!confirm("Delete this attachment?")) return;
 
-  try {
-    const res = await fetch(`/attachments/${id}`, { method: "DELETE", headers: { "Accept": "application/json" } });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
+    try {
+      const res = await fetch(`/attachments/${id}`, { method: "DELETE", headers: { "Accept": "application/json" } });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
 
-    const item = btn.closest(".attachment-item");
-    const grid = document.getElementById("attachmentGrid");
-    item?.remove();
+      const item = btn.closest(".attachment-item");
+      const grid = document.getElementById("attachmentGrid");
+      item?.remove();
 
-    if (grid && !grid.querySelector(".attachment-item")) {
-      const empty = document.createElement("div");
-      empty.className = "text-muted";
-      empty.textContent = "No attachments.";
-      grid.parentElement?.appendChild(empty);
+      if (grid && !grid.querySelector(".attachment-item")) {
+        const empty = document.createElement("div");
+        empty.className = "text-muted";
+        empty.textContent = "No attachments.";
+        grid.parentElement?.appendChild(empty);
+      }
+    } catch (err) {
+      alert(err.message || "Delete failed");
     }
-  } catch (err) {
-    alert(err.message || "Delete failed");
-  }
-});
+  });
+
+  // Handle due option toggle
+  document.getElementById("editDueOptionSelect")?.addEventListener("change", function () {
+    const wrapper = document.getElementById("editCustomDueWrapper");
+    if (this.value === "custom") {
+      wrapper.classList.remove("d-none");
+    } else {
+      wrapper.classList.add("d-none");
+    }
+  });
+
+  // Handle edit form submit
+  document.getElementById("editTicketForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target); //console.log(formData);
+
+    const ticketId = formData.get("ticket_id"); //console.log(ticketId); return;
+
+    const payload = {
+      subject: formData.get("subject"),
+      description: formData.get("description"),
+      due_option: formData.get("due_option"),
+      due_at: formData.get("due_at"),
+      assigned_to: formData.get("assigned_to"),
+    }; //console.log(payload); return;
+
+    const res = await fetch(`/client-admin/tickets/${ticketId}/edit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("editTicketMsg").innerText = "Ticket updated successfully!";
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      document.getElementById("editTicketMsg").innerText = "Error: " + data.message;
+    }
+  });
+
 
 });

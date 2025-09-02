@@ -62,7 +62,7 @@ function presenceWindowMinutes() { return 10; } // consider "online" if pinged w
 // }
 
 // === Dashboard render =============================================
-async function dashboard(req, res) {
+async function dashboard_(req, res) {
   const u = req.user;               // JWT payload
   const clientId = u.client_id;
 
@@ -83,15 +83,15 @@ async function dashboard(req, res) {
     // 2) tickets list (right column) — note: subject (not title), assigned_to is employees.id
     const [tickets] = await pool.query(
       `SELECT t.id, t.subject, t.status, t.priority, t.created_at,
-              t.assigned_to,
-              COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
-                       NULLIF(au.username,''), au.email) AS assignee_label
-         FROM tickets t
-    LEFT JOIN employees ae ON ae.id = t.assigned_to
-    LEFT JOIN users au ON au.id = ae.user_id
-        WHERE t.client_id = ? and t.status != 'closed'
-        ORDER BY t.id DESC
-        LIMIT 30`,
+          t.assigned_to,
+          COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
+                        NULLIF(au.username,''), au.email) AS assignee_label
+          FROM tickets t
+      LEFT JOIN employees ae ON ae.id = t.assigned_to
+      LEFT JOIN users au ON au.id = ae.user_id
+          WHERE t.client_id = ? AND t.status IN ('open','in_progress')
+      ORDER BY t.id DESC
+      LIMIT 100`,
       [clientId]
     );
 
@@ -160,6 +160,7 @@ async function dashboard(req, res) {
         offline_employees,
         closed_tickets,
         arachived_tickets,
+        total_tickets,
         sla
       }
     });
@@ -168,6 +169,113 @@ async function dashboard(req, res) {
     res.status(500).send("Server error");
   }
 }
+
+async function dashboard(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
+
+  try {
+    // 1) employees (for assignment dropdown)
+    const [employees] = await pool.query(
+      `SELECT e.id AS employee_id,
+              COALESCE(CONCAT(e.first_name,' ',e.last_name),
+                       NULLIF(u.username,''), u.email) AS label
+         FROM employees e
+         JOIN users u ON u.id = e.user_id
+        WHERE u.client_id = ? AND e.employment_type = 'internal'
+        ORDER BY label ASC`,
+      [clientId]
+    );
+
+    // 2) latest open tickets (initial dashboard view)
+    const [tickets] = await pool.query(
+      `SELECT t.id, t.subject, t.status, t.priority, t.created_at,
+          t.assigned_to, t.due_at,
+          CASE 
+            WHEN t.due_at IS NOT NULL 
+                 AND t.due_at < NOW() 
+                 AND t.status NOT IN ('closed','archived') 
+            THEN 1 ELSE 0 
+          END AS is_expired,
+          COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
+                   NULLIF(au.username,''), au.email) AS assignee_label
+     FROM tickets t
+      LEFT JOIN employees ae ON ae.id = t.assigned_to
+      LEFT JOIN users au ON au.id = ae.user_id
+          WHERE t.client_id = ? AND t.status IN ('open','in_progress')
+      ORDER BY t.id DESC
+        LIMIT 100`,
+      [clientId]
+    );
+
+    // 3) KPIs in one go
+    const [[summary]] = await pool.query(
+      `SELECT
+      COUNT(*) AS total_tickets,
+      SUM(status IN ('open','in_progress')) AS open_tickets,
+      SUM(status = 'closed') AS closed_tickets,
+      SUM(status = 'archived') AS archived_tickets,
+      SUM(due_at IS NOT NULL 
+          AND due_at < NOW() 
+          AND status NOT IN ('closed','archived')) AS expired_tickets
+      FROM tickets
+      WHERE client_id=?`,
+      [clientId]
+    );
+
+    // 4) employee counts
+    const [[{ total_employees = 0 } = {}]] = await pool.query(
+      `SELECT COUNT(*) AS total_employees
+         FROM employees e 
+         JOIN users u ON u.id = e.user_id
+        WHERE u.client_id=? AND e.employment_type='internal'`,
+      [clientId]
+    );
+
+    const [[{ online_employees = 0 } = {}]] = await pool.query(
+      `SELECT COUNT(*) AS online_employees
+         FROM users u
+         JOIN user_presence p ON p.user_id = u.id
+        WHERE u.client_id=? AND u.role='employee'
+          AND p.last_seen >= (CURRENT_TIMESTAMP - INTERVAL ? MINUTE)`,
+      [clientId, presenceWindowMinutes()]
+    );
+
+    const offline_employees = Math.max(0, total_employees - online_employees);
+
+    // 5) SLA buckets in one query
+    const [slaRows] = await pool.query(
+      `SELECT priority, COUNT(*) AS cnt
+         FROM tickets
+        WHERE client_id=? AND status IN ('open','in_progress')
+        GROUP BY priority`,
+      [clientId]
+    );
+
+    const sla = { low: 0, medium: 0, high: 0, urgent: 0 };
+    slaRows.forEach(r => { sla[r.priority] = r.cnt; });
+
+    // 6) render
+    res.render("internal/dashboard", {
+      title: "Internal Admin",
+      user: u,
+      assigns: { employees },
+      tickets,
+      summary: {
+        ...summary,
+        total_employees,
+        online_employees,
+        offline_employees,
+        sla
+      }
+    });
+
+  } catch (err) {
+    console.error("internal dashboard error:", err);
+    res.status(500).send("Server error");
+  }
+}
+
 
 // === JSON endpoints for dynamic refresh ===========================
 async function getSummary(req, res) {
@@ -216,23 +324,37 @@ async function getSummary(req, res) {
   }
 }
 
-async function getTickets(req, res) {
+async function getTickets_(req, res) {
   const u = req.user;
   const clientId = u.client_id;
+  const { status } = req.query;   // <-- read query param
 
   try {
-    const [tickets] = await pool.query(
-      `SELECT t.id, t.subject, t.status, t.priority, t.created_at,
-              t.assigned_to,
-              COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
-                       NULLIF(au.username,''), au.email) AS assignee_label
-         FROM tickets t
-    LEFT JOIN employees ae ON ae.id = t.assigned_to
-    LEFT JOIN users au ON au.id = ae.user_id
-        WHERE t.client_id = ?
-        ORDER BY t.id DESC`,
-      [clientId]
-    );
+    let sql = `
+      SELECT t.id, t.subject, t.status, t.priority, t.created_at,
+             t.assigned_to,
+             COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
+                      NULLIF(au.username,''), au.email) AS assignee_label
+        FROM tickets t
+   LEFT JOIN employees ae ON ae.id = t.assigned_to
+   LEFT JOIN users au ON au.id = ae.user_id
+       WHERE t.client_id = ?
+    `;
+    const params = [clientId];
+
+    if (status) {
+      if (status === "open") {
+        sql += " AND t.status IN ('open','in_progress')";
+      } else if (status === "closed") {
+        sql += " AND t.status = 'closed'";
+      } else if (status === "archived") {
+        sql += " AND t.status = 'archived'";
+      }
+    }
+
+    sql += " ORDER BY t.id DESC LIMIT 50";
+
+    const [tickets] = await pool.query(sql, params);
 
     res.json({ success: true, tickets });
   } catch (err) {
@@ -240,6 +362,59 @@ async function getTickets(req, res) {
     res.status(500).json({ success: false, error: "Server error" });
   }
 }
+
+async function getTickets(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
+  const { status } = req.query;   // open | closed | archived | expired | all
+
+  try {
+    let sql = `
+      SELECT t.id, t.subject, t.status, t.priority, t.created_at,
+             t.assigned_to, t.due_at,
+             CASE 
+               WHEN t.due_at IS NOT NULL 
+                    AND t.due_at < NOW() 
+                    AND t.status NOT IN ('closed','archived') 
+               THEN 1 ELSE 0 
+             END AS is_expired,
+             COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
+                      NULLIF(au.username,''), au.email) AS assignee_label
+        FROM tickets t
+   LEFT JOIN employees ae ON ae.id = t.assigned_to
+   LEFT JOIN users au ON au.id = ae.user_id
+       WHERE t.client_id = ?
+    `;
+    const params = [clientId];
+
+    if (status) {
+      if (status === "open") {
+        sql += " AND t.status IN ('open','in_progress')";
+      } else if (status === "closed") {
+        sql += " AND t.status = 'closed'";
+      } else if (status === "archived") {
+        sql += " AND t.status = 'archived'";
+      } else if (status === "expired") {
+        sql += " AND t.due_at IS NOT NULL AND t.due_at < NOW() AND t.status NOT IN ('closed','archived')";
+      } else if (status === "all") {
+        // no filter → all tickets
+      }
+    }
+
+    sql += " ORDER BY t.id DESC LIMIT 50";
+
+    const [tickets] = await pool.query(sql, params);
+
+    res.json({ success: true, tickets });
+  } catch (err) {
+    console.error("internal getTickets error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
+
+
+
 
 // ---------- Assign / Reassign (uses employees.id) ----------
 async function assignTicket(req, res) {
@@ -323,7 +498,7 @@ async function createEmployee(req, res) {
         WHERE ux.client_id=? AND ux.role='manager' AND e.employment_type = 'internal'`,
       [clientId]
     );
-    const count = mgrRows.length; 
+    const count = mgrRows.length;
 
     if (count === 0) {
       return res.status(400).json({ error: "Create a manager first before adding employees." });
@@ -382,7 +557,7 @@ async function listManagers(req, res) {
   const clientId = u.client_id;
   try {
     const [managers] = await pool.query(
-     `SELECT e.id AS manager_employee_id,
+      `SELECT e.id AS manager_employee_id,
         COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS label
       FROM employees e
       JOIN users u ON u.id = e.user_id
@@ -428,10 +603,10 @@ async function ticketPage(req, res) {
         ORDER BY ta.id DESC`,
       [id]
     );
-    const imageExt = new Set([".jpg",".jpeg",".png",".gif",".webp",".svg"]);
-    const attachments = (attachmentsRaw||[]).map(a => ({
+    const imageExt = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
+    const attachments = (attachmentsRaw || []).map(a => ({
       ...a,
-      is_image: imageExt.has(path.extname(a.file_path||"").toLowerCase())
+      is_image: imageExt.has(path.extname(a.file_path || "").toLowerCase())
     }));
 
     const [comments] = await pool.query(
@@ -475,7 +650,7 @@ async function listTicketComments(req, res) {
     res.json({ success: true, comments });
   } catch (e) {
     console.error("internal listTicketComments error:", e);
-    res.status(500).json({ success:false, error:"Server error" });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
@@ -497,10 +672,10 @@ async function createTicketComment(req, res) {
         WHERE c.id=?`,
       [r.insertId]
     );
-    res.json({ success:true, comment: row });
+    res.json({ success: true, comment: row });
   } catch (e) {
     console.error("internal createTicketComment error:", e);
-    res.status(500).json({ success:false, error:"Server error" });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
@@ -524,44 +699,86 @@ function attachmentsMiddleware() {
 async function addTicketAttachments(req, res) {
   const { id } = req.params;
   const files = req.files || [];
-  if (!files.length) return res.status(400).json({ success:false, error:"No files uploaded" });
+  if (!files.length) return res.status(400).json({ success: false, error: "No files uploaded" });
 
   try {
     const inserted = [];
     for (const f of files) {
-      const rel = path.join("uploads","tickets", path.basename(f.path)).replace(/\\/g, "/");
+      const rel = path.join("uploads", "tickets", path.basename(f.path)).replace(/\\/g, "/");
       const [r] = await pool.query(
         "INSERT INTO ticket_attachments (ticket_id, file_path, uploaded_by) VALUES (?,?,?)",
         [id, rel, req.user.id]
       );
       inserted.push({ id: r.insertId, file_path: rel });
     }
-    res.json({ success:true, attachments: inserted });
+    res.json({ success: true, attachments: inserted });
   } catch (e) {
     console.error("internal addTicketAttachments error:", e);
-    res.status(500).json({ success:false, error:"Server error" });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
 // ---------- Status ----------
-async function updateTicketStatus(req, res) {
+async function updateTicketStatus_(req, res) {
   const { id } = req.params;
   const map = { pending: "open", in_progress: "in_progress", resolved: "closed" };
   const dbStatus = map[(req.body?.status || "").toLowerCase()] || "open";
   try {
     await pool.query("UPDATE tickets SET status=?, updated_at=NOW() WHERE id=?", [dbStatus, id]);
-    res.json({ success:true, status: dbStatus });
+    res.json({ success: true, status: dbStatus });
   } catch (e) {
     console.error("internal updateTicketStatus error:", e);
-    res.status(500).json({ success:false, error:"Server error" });
+    res.status(500).json({ success: false, error: "Server error" });
   }
 }
+
+async function updateTicketStatus(req, res) {
+  const { id } = req.params;
+
+  // Map incoming statuses to DB values
+  const map = {
+    pending: "open",
+    in_progress: "in_progress",
+    resolved: "closed",
+    archived: "archived"   // allow archiving
+  };
+
+  const reqStatus = (req.body?.status || "").toLowerCase();
+  const dbStatus = map[reqStatus] || "open";
+
+  try {
+    if (dbStatus === "closed") {
+      // When closing, set closed_at timestamp
+      await pool.query(
+        "UPDATE tickets SET status=?, closed_at=NOW(), updated_at=NOW() WHERE id=?",
+        [dbStatus, id]
+      );
+    } else if (dbStatus === "archived") {
+      // Only allow archiving if already closed
+      await pool.query(
+        "UPDATE tickets SET status='archived', updated_at=NOW() WHERE id=? AND status='closed'",
+        [id]
+      );
+    } else {
+      await pool.query(
+        "UPDATE tickets SET status=?, updated_at=NOW() WHERE id=?",
+        [dbStatus, id]
+      );
+    }
+
+    res.json({ success: true, status: dbStatus });
+  } catch (e) {
+    console.error("internal updateTicketStatus error:", e);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
 
 async function updateTicketComment(req, res) {
   const { id: ticketId, commentId } = req.params;
   const { content } = req.body || {};
   if (!content || !content.trim()) {
-    return res.status(400).json({ success:false, error:"Content required" });
+    return res.status(400).json({ success: false, error: "Content required" });
   }
   try {
     // Load the comment to verify author + ticket
@@ -569,9 +786,9 @@ async function updateTicketComment(req, res) {
       "SELECT id, user_id, ticket_id FROM ticket_comments WHERE id=? AND ticket_id=? LIMIT 1",
       [commentId, ticketId]
     );
-    if (!row) return res.status(404).json({ success:false, error:"Comment not found" });
+    if (!row) return res.status(404).json({ success: false, error: "Comment not found" });
     if (row.user_id !== req.user.id) {
-      return res.status(403).json({ success:false, error:"You can edit only your own comment" });
+      return res.status(403).json({ success: false, error: "You can edit only your own comment" });
     }
 
     await pool.query(
@@ -590,10 +807,10 @@ async function updateTicketComment(req, res) {
         WHERE c.id=?`,
       [commentId]
     );
-    return res.json({ success:true, comment: updated });
+    return res.json({ success: true, comment: updated });
   } catch (e) {
     console.error("internal updateTicketComment error:", e);
-    return res.status(500).json({ success:false, error:"Server error" });
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
@@ -688,6 +905,20 @@ async function updateEmployee(req, res) {
   }
 }
 
+async function archiveTicket(req, res) {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      "UPDATE tickets SET status='archived', updated_at=NOW() WHERE id=? AND status='closed'",
+      [id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("archiveTicket error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+}
+
 
 
 
@@ -710,5 +941,6 @@ module.exports = {
   listEmployees,
   getEmployee,
   updateEmployee,
-  
+  archiveTicket,
+
 };
