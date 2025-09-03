@@ -209,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
       due_option: formData.get("due_option"),
       due_at: formData.get("due_at"),
       assigned_to: formData.get("assigned_to"),
+      priority: formData.get("priority"),
     }; //console.log(payload); return;
 
     const res = await fetch(`/client-admin/tickets/${ticketId}/edit`, {

@@ -131,12 +131,14 @@ async function refreshTickets(filter = "open") {
   try {
     const data = await getJSON("/client-admin/data/tickets");
     let rows = data.tickets || [];
-    if (filter === "open") rows = rows.filter(x => x.status === "open");
+    if (filter === "open") rows = rows.filter(x => (x.status === "open" || x.status === "in_progress"));
     if (filter === "in_progress") rows = rows.filter(x => x.status === "in_progress");
     if (filter === "archived") rows = rows.filter(x => x.status === "archived");
+    if (filter === "resolved") rows = rows.filter(x => x.status === "resolved");
     if (filter === "closed") rows = rows.filter(x => x.status === "closed");
     renderTicketsTable(rows);
     renderRecentList(data.tickets || []);
+
   } catch { }
 }
 
@@ -145,6 +147,7 @@ function bindFilters() {
   document.getElementById("fltOpen")?.addEventListener("click", () => refreshTickets("open"));
   document.getElementById("fltInProg")?.addEventListener("click", () => refreshTickets("in_progress"));
   document.getElementById("fltArchived")?.addEventListener("click", () => refreshTickets("archived"));
+  document.getElementById("fltResolved")?.addEventListener("click", () => refreshTickets("resolved"));
   document.getElementById("fltClosed")?.addEventListener("click", () => refreshTickets("closed"));
 }
 

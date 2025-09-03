@@ -2,11 +2,14 @@
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Dashboard</h2>
-    <div class="d-flex gap-2">
-      <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateManager">
+    <div class="d-flex gap-5">
+      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#employeeListModal">
+        <i class="bi bi-person-fill"></i> View Employees
+      </button>
+      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalCreateManager">
         <i class="bi bi-person-plus"></i> Manager
       </button>
-      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateEmployee">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateEmployee">
         <i class="bi bi-person-plus-fill"></i> Employee
       </button>
     </div>
@@ -15,23 +18,23 @@
   <!-- KPI Cards -->
   <div class="row g-3 mb-4">
     <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="all">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="open">
         <div class="card-body">
-          <i class="bi bi-list-task display-6 text-primary"></i>
-          <div class="fw-bold mt-2">All Tickets</div>
-          <div class="h3 mb-0">
-            <?= summary.total_tickets ?>
+          <i class="bi bi-ticket-detailed display-6 text-info"></i>
+          <div class="fw-bold mt-2">Open / Pending</div>
+          <div class="h3 mb-0" id="openCount">
+            <?= summary?.open_tickets || 0 ?>
           </div>
         </div>
       </div>
     </div>
     <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="open">
+      <div class="card kpi-card shadow-sm text-center clickable"  data-filter="resolved">
         <div class="card-body">
-          <i class="bi bi-ticket-detailed display-6 text-info"></i>
-          <div class="fw-bold mt-2">Open Tickets</div>
-          <div class="h3 mb-0" id="openCount">
-            <?= summary?.open_tickets || 0 ?>
+          <i class="bi bi-bookmark-check display-6 text-warning"></i>
+          <div class="fw-bold mt-2">Resolved</div>
+          <div class="h3 mb-0">
+            <?= summary?.resolved_tickets ?>
           </div>
         </div>
       </div>
@@ -70,13 +73,12 @@
       </div>
     </div>
     <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-bs-toggle="modal"
-        data-bs-target="#employeeListModal">
+      <div class="card kpi-card shadow-sm text-center clickable" data-filter="all">
         <div class="card-body">
-          <i class="bi bi-people-fill display-6 text-dark"></i>
-          <div class="fw-bold mt-2">Employees</div>
+          <i class="bi bi-list-task display-6 text-primary"></i>
+          <div class="fw-bold mt-2">All Tickets</div>
           <div class="h3 mb-0">
-            <?= summary.total_employees ?>
+            <?= summary.total_tickets ?>
           </div>
         </div>
       </div>

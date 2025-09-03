@@ -66,10 +66,90 @@ async function dashboard(req, res) {
          FROM tickets t
     LEFT JOIN employees ae ON ae.id = t.assigned_to
     LEFT JOIN users au ON au.id = ae.user_id
-        WHERE t.client_id = ?
+        WHERE t.client_id = ? AND t.status NOT IN ('discarded', 'archived')
         ORDER BY t.id DESC
         LIMIT 50`,
       [clientId]
+    );    
+
+    const [[statsRow]] = await pool.query(
+      `SELECT
+         SUM(CASE WHEN status='open' THEN 1 ELSE 0 END)        AS open,
+         SUM(CASE WHEN status='in_progress' THEN 1 ELSE 0 END) AS in_progress,
+         SUM(CASE WHEN status='resolved' THEN 1 ELSE 0 END)    AS resolved,
+         SUM(CASE WHEN status='closed' THEN 1 ELSE 0 END)      AS closed,
+         SUM(CASE WHEN priority='high' THEN 1 ELSE 0 END)      AS high,
+         SUM(CASE WHEN priority='medium' THEN 1 ELSE 0 END)    AS medium,
+         SUM(CASE WHEN priority='low' THEN 1 ELSE 0 END)       AS low,
+         SUM(CASE WHEN priority='urgent' THEN 1 ELSE 0 END)    AS urgent
+       FROM tickets
+       WHERE client_id=? AND status NOT IN ('discarded', 'archived');`,
+      [clientId]
+    );
+    const stats = statsRow || {};
+
+    res.render("manager/dashboard", {
+      title: "Manager Dashboard",
+      user: u,
+      team,
+      tickets,
+      // teamSelect,
+      stats
+    });
+  } catch (err) {
+    console.error("manager dashboard error:", err);
+    res.status(500).send("Server error");
+  }
+}
+
+// ===================== Ticket Page =====================
+async function ticketPage(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
+  const ticketId = Number(req.params.id);
+
+  try {
+    const managerEmpId = await getManagerEmployeeId(u.id);
+    const [[t]] = await pool.query(
+      `SELECT t.*,
+              COALESCE(CONCAT(ae.first_name,' ',ae.last_name), NULLIF(au.username,''), au.email) AS assignee_label,
+              COALESCE(CONCAT(re.first_name,' ',re.last_name), NULLIF(ru.username,''), ru.email) AS raised_by_label
+         FROM tickets t
+    LEFT JOIN employees ae ON ae.id = t.assigned_to
+    LEFT JOIN users au ON au.id = ae.user_id
+    LEFT JOIN users ru ON ru.id = t.raised_by
+    LEFT JOIN employees re ON re.user_id = ru.id
+        WHERE t.id=? AND t.client_id=?`,
+      [ticketId, clientId]
+    );
+    if (!t) return res.status(404).send("Ticket not found");
+
+    const [attachmentsRaw] = await pool.query(
+      `SELECT ta.id, ta.file_path, ta.uploaded_at, ta.uploaded_by,
+              COALESCE(CONCAT(ue.first_name,' ',ue.last_name),
+                       NULLIF(uu.username,''), uu.email) AS uploader_label
+         FROM ticket_attachments ta
+    LEFT JOIN users uu ON uu.id = ta.uploaded_by
+    LEFT JOIN employees ue ON ue.user_id = uu.id
+        WHERE ta.ticket_id=?
+        ORDER BY ta.id DESC`,
+      [ticketId]
+    );
+    const imageExt = new Set([".jpg",".jpeg",".png",".gif",".webp",".svg"]);
+    const attachments = (attachmentsRaw || []).map(a => ({
+      ...a,
+      is_image: imageExt.has(path.extname(a.file_path || "").toLowerCase())
+    }));
+
+    const [comments] = await pool.query(
+      `SELECT c.id, c.comment AS content, c.created_at, c.user_id AS author_id,
+              COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS author_label
+         FROM ticket_comments c
+         JOIN users u ON u.id = c.user_id
+    LEFT JOIN employees e ON e.user_id = u.id
+        WHERE c.ticket_id=?
+        ORDER BY c.id DESC`,
+      [ticketId]
     );
 
     const [teamSelect] = await pool.query(
@@ -83,32 +163,16 @@ async function dashboard(req, res) {
       [clientId, managerEmpId]
     );
 
-    const [[statsRow]] = await pool.query(
-      `SELECT
-         SUM(CASE WHEN status='open' THEN 1 ELSE 0 END)        AS open,
-         SUM(CASE WHEN status='in_progress' THEN 1 ELSE 0 END) AS in_progress,
-         SUM(CASE WHEN status='resolved' THEN 1 ELSE 0 END)    AS resolved,
-         SUM(CASE WHEN status='closed' THEN 1 ELSE 0 END)      AS closed,
-         SUM(CASE WHEN priority='high' THEN 1 ELSE 0 END)      AS high,
-         SUM(CASE WHEN priority='medium' THEN 1 ELSE 0 END)    AS medium,
-         SUM(CASE WHEN priority='low' THEN 1 ELSE 0 END)       AS low,
-         SUM(CASE WHEN priority='urgent' THEN 1 ELSE 0 END)    AS urgent
-       FROM tickets
-       WHERE client_id=?`,
-      [clientId]
-    );
-    const stats = statsRow || {};
-
-    res.render("manager/dashboard", {
-      title: "Manager Dashboard",
+    res.render("manager/ticket", {
+      title: `Ticket #${t.id}`,
       user: u,
-      team,
-      tickets,
-      teamSelect,
-      stats
+      ticket: t,
+      attachments,
+      comments,
+      teamSelect
     });
   } catch (err) {
-    console.error("manager dashboard error:", err);
+    console.error("ticketPage error:", err);
     res.status(500).send("Server error");
   }
 }
@@ -160,7 +224,7 @@ async function getTickets(req, res) {
          FROM tickets t
     LEFT JOIN employees e ON e.id = t.assigned_to
     LEFT JOIN users u2 ON u2.id = e.user_id
-        WHERE t.client_id = ?
+        WHERE t.client_id = ? AND t.status NOT IN ('discarded', 'archived')
         ORDER BY t.id DESC
         LIMIT 100`,
       [clientId]
@@ -225,67 +289,7 @@ async function resetEmployeePassword(req, res) {
   }
 }
 
-// ===================== Ticket Page =====================
-async function ticketPage(req, res) {
-  const u = req.user;
-  const clientId = u.client_id;
-  const ticketId = Number(req.params.id);
 
-  try {
-    const [[t]] = await pool.query(
-      `SELECT t.*,
-              COALESCE(CONCAT(ae.first_name,' ',ae.last_name), NULLIF(au.username,''), au.email) AS assignee_label,
-              COALESCE(CONCAT(re.first_name,' ',re.last_name), NULLIF(ru.username,''), ru.email) AS raised_by_label
-         FROM tickets t
-    LEFT JOIN employees ae ON ae.id = t.assigned_to
-    LEFT JOIN users au ON au.id = ae.user_id
-    LEFT JOIN users ru ON ru.id = t.raised_by
-    LEFT JOIN employees re ON re.user_id = ru.id
-        WHERE t.id=? AND t.client_id=?`,
-      [ticketId, clientId]
-    );
-    if (!t) return res.status(404).send("Ticket not found");
-
-    const [attachmentsRaw] = await pool.query(
-      `SELECT ta.id, ta.file_path, ta.uploaded_at, ta.uploaded_by,
-              COALESCE(CONCAT(ue.first_name,' ',ue.last_name),
-                       NULLIF(uu.username,''), uu.email) AS uploader_label
-         FROM ticket_attachments ta
-    LEFT JOIN users uu ON uu.id = ta.uploaded_by
-    LEFT JOIN employees ue ON ue.user_id = uu.id
-        WHERE ta.ticket_id=?
-        ORDER BY ta.id DESC`,
-      [ticketId]
-    );
-    const imageExt = new Set([".jpg",".jpeg",".png",".gif",".webp",".svg"]);
-    const attachments = (attachmentsRaw || []).map(a => ({
-      ...a,
-      is_image: imageExt.has(path.extname(a.file_path || "").toLowerCase())
-    }));
-
-    const [comments] = await pool.query(
-      `SELECT c.id, c.comment AS content, c.created_at, c.user_id AS author_id,
-              COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS author_label
-         FROM ticket_comments c
-         JOIN users u ON u.id = c.user_id
-    LEFT JOIN employees e ON e.user_id = u.id
-        WHERE c.ticket_id=?
-        ORDER BY c.id DESC`,
-      [ticketId]
-    );
-
-    res.render("manager/ticket", {
-      title: `Ticket #${t.id}`,
-      user: u,
-      ticket: t,
-      attachments,
-      comments
-    });
-  } catch (err) {
-    console.error("ticketPage error:", err);
-    res.status(500).send("Server error");
-  }
-}
 
 // ===================== Ticket Comments =====================
 async function listTicketComments(req, res) {
@@ -389,7 +393,7 @@ async function addTicketAttachments(req, res) {
 async function updateTicketStatus(req, res) {
   const clientId = req.user.client_id;
   const id = Number(req.params.id);
-  const map = { pending: "open", in_progress: "in_progress", resolved: "closed" };
+  const map = { pending: "open", in_progress: "in_progress", resolved: "resolved", closed: "closed" };
   const dbStatus = map[(req.body?.status || "").toLowerCase()] || "open";
 
   const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [id, clientId]);

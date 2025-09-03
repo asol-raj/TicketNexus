@@ -5,7 +5,7 @@
         <?= ticket.id ?> -
         <?= ticket.subject ?>
       </h3>
-      
+
       <div>
         <? if (ticket.status !=='discarded' ) { ?>
         <form action="/client-admin/tickets/<?= ticket.id ?>/discard" method="POST" class="d-inline"
@@ -174,7 +174,22 @@
           <input type="hidden" name="ticket_id" value="<?= ticket.id ?>">
 
           <!-- Subject -->
-          <input class="form-control" name="subject" placeholder="Subject" value="<?= ticket.subject ?>" required>
+          <div class="row g-2">
+            <div class="col-8">
+              <label class="form-label">Subject</label>
+              <input class="form-control" name="subject" value="<?= ticket.subject ?>" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Priority</label>
+              <select class="form-select" name="priority">
+                <option value="low" <?=ticket.priority==='low' ? 'selected' : '' ?> >Low</option>
+                <option value="medium"<?=ticket.priority==='medium' ? 'selected' : '' ?> >Medium</option>
+                <option value="high"<?=ticket.priority==='high' ? 'selected' : '' ?> >High</option>
+                <option value="urgent"<?=ticket.priority==='urgent' ? 'selected' : '' ?> >Urgent</option>
+              </select>
+            </div>
+          </div>
+
 
           <!-- Description -->
           <textarea class="form-control" name="description" placeholder="Describe the issue"
@@ -200,7 +215,7 @@
             </div>
 
             <!-- Assignee -->
-           
+
 
             <div class="col-md-4">
               <label class="form-label">Assign to (optional)</label>
@@ -208,7 +223,8 @@
                 <option value="" <?=!ticket.assigned_to ? 'selected' : '' ?>>Unassigned</option>
                 <? employees.forEach(emp => { ?>
                 <option value="<?= emp.id ?>" <?=ticket.assigned_to===emp.id ? 'selected' : '' ?>>
-                  <?= emp.first_name ?> <?= emp.last_name ?>
+                  <?= emp.first_name ?>
+                  <?= emp.last_name ?>
                 </option>
                 <? }) ?>
               </select>

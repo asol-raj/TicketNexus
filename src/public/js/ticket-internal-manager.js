@@ -4,12 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!root) return;
 
   const TICKET_ID = root.dataset.ticketId;
-  const USER_ID   = root.dataset.userId;
+  const USER_ID = root.dataset.userId;
 
   const q = (s) => document.querySelector(s);
   const esc = (s) => String(s)
-    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">", "&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#39;");
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 
   // ===== Update ticket status =====
   q("#applyStatus")?.addEventListener("click", async () => {
@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const j = await res.json().catch(() => ({}));
     if (!res.ok || j.success === false) return alert(j.error || "Failed to update status");
     q("#statusBadge").textContent = j.status;
+    window.location.reload();
   });
 
   // ===== Post new comment =====
@@ -45,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const wrap = document.createElement("div");
     wrap.className = "mb-3 border-bottom pb-2";
     wrap.dataset.commentId = c.id;
-    wrap.dataset.authorId  = c.author_id;
+    wrap.dataset.authorId = c.author_id;
     wrap.innerHTML = `
       <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -126,8 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="small text-muted">Uploaded just now</div>
             </div>
             ${isImg
-              ? `<a href="/attachments/${a.id}" target="_blank"><img src="/attachments/${a.id}" class="img-fluid rounded"></a>`
-              : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`}
+            ? `<a href="/attachments/${a.id}" target="_blank"><img src="/attachments/${a.id}" class="img-fluid rounded"></a>`
+            : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`}
           </div>`;
         grid.prepend(col);
       });
@@ -136,6 +137,26 @@ document.addEventListener("DOMContentLoaded", () => {
       e.target.reset();
     } catch (err) {
       msg.textContent = err.message;
+    }
+  });
+
+  q('#applyAssign').addEventListener("click", async () => {
+    const ticketId = TICKET_ID;
+    const select = document.getElementById("assignSelect");
+    const empId = select.value; //console.log(ticketId, empId); return;
+    if (!empId) return alert("Select an employee");
+    try {
+      const res = await fetch("/manager/assign-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId, employeeId: empId }),
+      });
+      const j = await res.json();
+      if (!res.ok || j.success === false) throw new Error(j.error || "Assignment failed");
+      alert("Assigned successfully");
+      window.location.reload();
+    } catch (err) {
+      alert(err.message);
     }
   });
 

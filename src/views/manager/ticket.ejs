@@ -1,21 +1,37 @@
 <div class="container-fluid py-3" id="ticketPage" data-ticket-id="<?= ticket.id ?>" data-user-id="<?= user.id ?>">
 
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <a href="/manager" class="btn btn-sm btn-outline-secondary me-2">
-        <i class="bi bi-arrow-left"></i> Back
-      </a>
+    <div class="d-flex justify-content-start align-items-center gap-3 me-auto">
       <h2 class="d-inline">Ticket #
         <?= ticket.id ?> —
         <?= ticket.subject ?>
       </h2>
     </div>
+    <?#= ticket.assignee_label || m.employee_id ?>
+    <div class="d-flex align-items-center gap-2 me-5">
+      <span class="select-label"> Assign To </span>
+      <select id="assignSelect" class="form-select form-select-sm" style="width:auto;">
+        <!-- Always include Unassigned option -->
+        <option value="" <?=!ticket.assignee_label || !teamSelect.some(m=> m.label === ticket.assignee_label) ?
+          "selected" : "" ?>>Unassigned</option>
+
+        <? teamSelect.forEach(m => { ?>
+        <option value="<?= m.employee_id ?>" <?=ticket.assignee_label===m.label ? "selected" : "" ?>>
+          <?= m.label ?>
+        </option>
+        <? }) ?>
+      </select>
+      <button class="btn btn-sm btn-outline-primary" id="applyAssign">Assign</button>
+    </div>
+
+
 
     <?
       let badgeClass = "bg-secondary";
       if (ticket.status === "open") badgeClass = "bg-info";
       else if (ticket.status === "in_progress") badgeClass = "bg-warning text-dark";
-      else if (ticket.status === "resolved" || ticket.status === "closed") badgeClass = "bg-success";
+      else if (ticket.status === "resolved") badgeClass = "bg-success";
+      else if (ticket.status === "closed") badgeClass = "bg-dark";
     ?>
     <div class="d-flex align-items-center gap-2">
       <span class="badge <?= badgeClass ?> text-uppercase" id="statusBadge">
@@ -24,8 +40,8 @@
       <select id="statusSelect" class="form-select form-select-sm" style="width:auto;">
         <option value="pending" <?=ticket.status==='open' ? 'selected' : '' ?>>Pending</option>
         <option value="in_progress" <?=ticket.status==='in_progress' ? 'selected' : '' ?>>In&nbsp;Progress</option>
-        <option value="resolved" <?=(ticket.status==='closed' ||ticket.status==='resolved' ) ? 'selected' : '' ?>
-          >Resolved</option>
+        <option value="resolved" <?=ticket.status==='resolved' ? 'selected' : '' ?>>Resolved</option>
+        <option value="closed" <?=ticket.status==='closed' ? 'selected' : '' ?>>Closed</option>
       </select>
       <button class="btn btn-sm btn-outline-primary" id="applyStatus">Update</button>
     </div>
@@ -37,14 +53,31 @@
       <div class="card shadow-sm mb-3">
         <div class="card-header fw-bold">Details</div>
         <div class="card-body">
-          <div class="mb-2"><strong>Priority:</strong> <span class="text-uppercase">
-              <?= ticket.priority ?>
-            </span></div>
+          <div class="mb-2">
+            <strong>Priority:</strong>
+            <span class="text-uppercase">
+              <?
+                  let badgeclass = 'bg-secondary';
+                  if (ticket.priority === 'urgent') {
+                    badgeclass = 'bg-danger';
+                  } else if (ticket.priority === 'high') {
+                    badgeclass = 'bg-warning';
+                  } else if (ticket.priority === 'medium') {
+                    badgeclass = 'bg-info';
+                  } else if (ticket.priority === 'low') {
+                    badgeclass = 'bg-success';
+                  }
+              ?>
+              <span class="badge text-uppercase <?= badgeclass ?>">
+                <?= ticket.priority || 'n/a' ?>
+              </span>
+            </span>
+          </div>
           <div class="d-flex justify-content-between align-items-center gap-5 flex-wrap">
             <div class="mb-2"><strong>Raised by:</strong>
               <?= ticket.raised_by_label ?>
             </div>
-            <div class="mb-2"><strong>Assignee:</strong>
+            <div><strong>Assignee:</strong>
               <?= ticket.assignee_label || 'Unassigned' ?>
             </div>
             <div><strong>Created:</strong>
@@ -57,7 +90,9 @@
             <? } ?>
           </div>
           <strong>Description:</strong>
-          <?= ticket.description ?>
+          <span class="px-2 text-dark" style="background-color:rgb(255, 255, 195);">
+            <?= ticket.description ?>
+          </span>
         </div>
       </div>
 
@@ -147,6 +182,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <!-- Add Attachments Modal -->

@@ -864,8 +864,8 @@ async function editTicket_(req, res) {
 async function editTicket(req, res) { //console.log(req.body); return;
   const clientId = req.user.client_id;
   const ticketId = req.params.id;
-  const { subject, description, due_option, due_at, assigned_to } = req.body;
-
+  const { subject, description, due_option, due_at, assigned_to, priority } = req.body;
+  // console.log(req.body);
   try {
     let finalDueAt = null;
 
@@ -908,9 +908,9 @@ async function editTicket(req, res) { //console.log(req.body); return;
 
     await pool.query(
       `UPDATE tickets 
-          SET subject=?, description=?, due_option=?, due_at=?, assigned_to=?, updated_at=NOW()
+          SET subject=?, description=?, due_option=?, due_at=?, assigned_to=?, updated_at=NOW(), priority=?
         WHERE id=? AND client_id=?`,
-      [subject, description, due_option, finalDueAt, assigned_to || null, ticketId, clientId]
+      [subject, description, due_option, finalDueAt, assigned_to || null, priority, ticketId, clientId]
     );
 
     res.json({ success: true });

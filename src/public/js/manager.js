@@ -60,19 +60,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 data-assignee="${t.assignee_label || ''}">
             <div class="d-flex justify-content-between">
               <strong>
-                <a href="/manager/tickets/${t.id}" class="text-decoration-none">#${t.id} · ${t.subject || "Ticket"}</a>
+                <a href="/manager/tickets/${t.id}" target="_blank" class="text-decoration-none">#${t.id} · ${t.subject || "Ticket"}</a>
               </strong>
               <span class="badge bg-secondary">${t.priority || "n/a"}</span>
             </div>
             <div class="small text-muted mb-2">
               Status: ${t.status || "n/a"} · Assignee: ${t.assignee_label || "Unassigned"}
-            </div>
-            <div class="d-flex gap-2 assign-wrap ${t.status === "closed" || t.status === "resolved" ? "d-none" : ""}">
-              <select class="form-select form-select-sm assign-select" data-ticket-id="${t.id}">
-                <option value="">Assign to…</option>
-              </select>
-              <button class="btn btn-sm btn-primary do-assign" data-ticket-id="${t.id}">Assign</button>
-            </div>
+            </div>            
           </div>`
         );
       });
@@ -101,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function applyFilter(type) {
     currentFilter = type;
     qa("#ticketList .ticket-item").forEach((el) => {
-      const status = (el.dataset.status || "").toLowerCase();
+      const status = (el.dataset.status || "").toLowerCase(); console.log(status)
       const assignee = (el.dataset.assignee || "").toLowerCase();
       let show = false;
 
@@ -116,7 +110,9 @@ document.addEventListener("DOMContentLoaded", () => {
         show = (!assignee || assignee === "unassigned") &&
           status !== "closed" && status !== "resolved";
       } else if (type === "closed") {
-        show = (status === "closed" || status === "resolved");
+        show = (status === "closed");
+      } else if (type === "resolved") {
+        show = (status === "resolved");
       }
 
       el.style.display = show ? "" : "none";

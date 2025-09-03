@@ -34,8 +34,8 @@ CREATE TABLE `users` (
     ON DELETE CASCADE ON UPDATE CASCADE,
 
   CONSTRAINT chk_admin_type_role CHECK (
-    (role = 'admin'  AND admin_type IN ('internal','client')) OR
-    (role <> 'admin' AND admin_type IS NULL)
+    (role = 'admin'  AND `admin_type` IN ('internal','client')) OR
+    (role <> 'admin' AND `admin_type` IS NULL)
   )
 ) ;
 
@@ -75,6 +75,31 @@ SELECT * FROM employees;
 
 ALTER TABLE `employees`
   ADD COLUMN `employment_type` ENUM('internal','client') NOT NULL DEFAULT 'internal';
+
+CREATE TABLE `duties`(
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `duty` VARCHAR(255) NOT NULL,
+  `description` TEXT,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO `duties`(`duty`, `description`) VALUES 
+('Data Entry', 'Tickt Data Entry'),
+('Report Updation', 'Update daily reports'),
+('Purchase Orders', 'Create Purchase Orders'),
+('Data Audit', 'Audit all tickets and purchase orders'),
+('Sales Promotion', 'Sales Promotion by sending text messages'),
+('Techinical Support', 'Provide tichinial suport to client and internal staff'),
+('')
+
+CREATE TABLE `employee_duties`(
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `emp_id` INT NOT NULL,
+  `duty_id` INT NOT NULL,
+  FOREIGN KEY (`emp_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`duty_id`) REFERENCES `duties`(`id`) ON DELETE CASCADE
+);
 
 -- =========================================
 -- SHIFTS (work schedule)

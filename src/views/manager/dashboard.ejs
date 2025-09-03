@@ -1,6 +1,6 @@
 <div class="container-fluid py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Manager Dashboard</h1>
+    <h2 class="mb-0"><?= title ?></h1>
     <span class="badge bg-primary text-uppercase">Manager</span>
   </div>
 
@@ -125,6 +125,7 @@
             <button class="btn btn-outline-primary active" id="filterActionable">Actionable</button>
             <button class="btn btn-outline-primary" id="filterOpen">Open</button>
             <button class="btn btn-outline-primary" id="filterUnassigned">Unassigned</button>
+            <button class="btn btn-outline-primary" id="filterResolved">Resolved</button>
             <button class="btn btn-outline-secondary" id="filterClosed">Closed</button>
           </div>
 
@@ -150,18 +151,7 @@
               Status:
               <?= t.status || 'n/a' ?> · Assignee:
               <?= t.assignee_label || 'Unassigned' ?>
-            </div>
-            <div class="d-flex gap-2 assign-wrap <?= (t.status === 'closed') ? 'd-none' : '' ?>">
-              <select class="form-select form-select-sm assign-select" data-ticket-id="<?= t.id ?>">
-                <option value="">Assign to…</option>
-                <? teamSelect.forEach(emp => { ?>
-                <option value="<?= emp.employee_id ?>">
-                  <?= emp.label ?>
-                </option>
-                <? }) ?>
-              </select>
-              <button class="btn btn-sm btn-primary do-assign" data-ticket-id="<?= t.id ?>">Assign</button>
-            </div>
+            </div>           
           </div>
           <? }) ?>
           <? } else { ?>

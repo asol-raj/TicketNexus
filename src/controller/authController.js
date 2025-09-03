@@ -105,14 +105,14 @@ async function login(req, res) {
       id: user.id,
       client_id: user.client_id || null,
       role: user.role,
-      admin_type: user.admin_type || null,                 // 'internal' | 'client' for admins
-      employment_type: emp ? emp.employment_type : null,       // 'internal' | 'client' for mgr/employee
-      username: user.username || null,
       email: user.email || null,
+      username: user.username || null,
+      admin_type: user.admin_type || null,                      // 'internal' | 'client' for admins
+      employment_type: emp ? emp.employment_type : null,        // 'internal' | 'client' for mgr/employee
       first_name: emp ? emp.first_name : null,
       last_name:  emp ? emp.last_name  : null,
     };
-    console.log("LOGIN PAYLOAD =>", payload);
+    // console.log("LOGIN PAYLOAD =>", payload);
 
     // 6) Sign JWT for 9 hours
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES || "9h" });

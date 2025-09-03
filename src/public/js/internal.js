@@ -81,9 +81,8 @@ function renderTickets(tickets) {
           <div>
             <strong class="${t.status === "archived" ? "text-muted text-decoration-line-through" : ""}">
               <a class="text-decoration-none ticket-link" href="/internal/tickets/${t.id}" target="_blank">
-                #${t.id}
-              </a>
-              · ${t.subject || "Ticket"}
+                #${t.id} · ${t.subject || "Ticket"}
+              </a>              
             </strong>
             <div class="small text-muted">
               Status: ${t.is_expired ? `<span class="text-danger fw-bold">Expired</span>` : (t.status || "n/a")}
@@ -141,7 +140,7 @@ async function loadTickets(filter) {
 function bindKpiFilters() {
   document.querySelectorAll(".kpi-card.clickable[data-filter]").forEach(card => {
     card.addEventListener("click", async () => {
-      const status = card.dataset.filter;
+      const status = card.dataset.filter; console.log(status);
       try {
         const j = await getJSON(`/internal/data/tickets?status=${status}`);
         renderTickets(j.tickets, `${status.charAt(0).toUpperCase() + status.slice(1)} Tickets`);

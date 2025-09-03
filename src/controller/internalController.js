@@ -214,12 +214,13 @@ async function dashboard(req, res) {
       COUNT(*) AS total_tickets,
       SUM(status IN ('open','in_progress')) AS open_tickets,
       SUM(status = 'closed') AS closed_tickets,
+      SUM(status = 'resolved') AS resolved_tickets,
       SUM(status = 'archived') AS archived_tickets,
       SUM(due_at IS NOT NULL 
           AND due_at < NOW() 
           AND status NOT IN ('closed','archived')) AS expired_tickets
       FROM tickets
-      WHERE client_id=?`,
+      WHERE client_id=? AND status != 'discarded';`,
       [clientId]
     );
 
@@ -394,9 +395,12 @@ async function getTickets(req, res) {
         sql += " AND t.status = 'closed'";
       } else if (status === "archived") {
         sql += " AND t.status = 'archived'";
+      } else if(status === "resolved") {
+        sql += " AND t.status = 'resolved'";
       } else if (status === "expired") {
         sql += " AND t.due_at IS NOT NULL AND t.due_at < NOW() AND t.status NOT IN ('closed','archived')";
       } else if (status === "all") {
+        sql += " AND t.status != 'discarded'";
         // no filter → all tickets
       }
     }
@@ -739,7 +743,8 @@ async function updateTicketStatus(req, res) {
   const map = {
     pending: "open",
     in_progress: "in_progress",
-    resolved: "closed",
+    resolved: "resolved",
+    closed: "closed",
     archived: "archived"   // allow archiving
   };
 

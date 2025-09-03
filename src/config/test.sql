@@ -63,4 +63,23 @@ SELECT t.id, t.subject, t.status, t.priority, t.created_at,
         WHERE t.client_id = 1
         ORDER BY t.id DESC;
 
-SELECT * FROM tickets;
+SELECT * FROM tickets order by id desc;
+
+SELECT t.id, t.subject, t.status, t.priority, t.created_at,
+              t.assigned_to,
+              COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
+                       NULLIF(au.username,''), au.email) AS assignee_label
+         FROM tickets t
+    LEFT JOIN employees ae ON ae.id = t.assigned_to
+    LEFT JOIN users au ON au.id = ae.user_id
+        WHERE t.client_id = 1 AND t.status NOT IN ('discarded', 'archived')
+        ORDER BY t.id DESC
+        LIMIT 50;
+
+
+select * FROM users order by id DESC;
+UPDATE users SET role = 'manager' WHERE id = 16;
+
+SELECT * FROM employees ORDER BY id DESC;
+UPDATE employees SET manager_id = NULL WHERE id = 15;
+UPDATE employees SET position = 'Manager' WHERE id = 15;
