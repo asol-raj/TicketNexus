@@ -1,7 +1,7 @@
 const bcrypt = (() => {
   try { return require("bcryptjs"); } catch (e) { return null; }
 })();
-const pool = require("../../db").promise();
+const pool = require("../../db");
 
 async function hashPassword(pw) {
   return bcrypt ? await bcrypt.hash(pw, 10) : pw;

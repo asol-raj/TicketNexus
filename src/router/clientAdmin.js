@@ -14,8 +14,11 @@ router.get("/data/tickets/:status", requireJWT, requireClientAdmin, ctrl.listTic
 router.get("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.listTicketComments);
 
 // Actions
-router.post("/managers", requireJWT, requireClientAdmin, ctrl.createManager);
-router.post("/employees", requireJWT, requireClientAdmin, ctrl.createClientEmployee);
+router.post("/managers/create", requireJWT, requireClientAdmin, ctrl.createManager);
+router.post("/employees/create", requireJWT, requireClientAdmin, ctrl.createClientEmployee);
+router.post("/users/create" , requireJWT, requireClientAdmin, ctrl.createUserWithEmployee);
+
+router.post("/employees/update", requireJWT, requireClientAdmin, ctrl.updateEmployee);
 router.post("/employees/:userId/reset-password", requireJWT, requireClientAdmin, ctrl.resetEmployeePassword);
 router.post("/tickets", requireJWT, requireClientAdmin, ctrl.attachmentsMiddleware(), ctrl.createTicket);
 router.post("/tickets/:id/comments", requireJWT, requireClientAdmin, ctrl.createTicketComment);
@@ -26,7 +29,6 @@ router.post("/tickets/:id/attachments",
   ctrl.addTicketAttachments
 );
 router.put("/tickets/:id/status", requireJWT, requireClientAdmin, ctrl.updateTicketStatus); // NEW
-router.post("/client/employees/update", requireClientAdmin, ctrl.updateEmployee);
 router.post("/tickets/:id/edit", requireJWT, requireClientAdmin, ctrl.editTicket);
 router.post("/tickets/:id/discard", requireJWT, requireClientAdmin, ctrl.discardTicket);
 

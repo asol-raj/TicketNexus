@@ -1,5 +1,5 @@
 const bcrypt = (() => { try { return require("bcryptjs"); } catch { return null; } })();
-const pool = require("../../db").promise();
+const pool = require("../../db");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");

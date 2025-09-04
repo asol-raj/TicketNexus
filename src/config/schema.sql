@@ -32,12 +32,11 @@ CREATE TABLE `users` (
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_users_client FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
-
   CONSTRAINT chk_admin_type_role CHECK (
     (role = 'admin'  AND `admin_type` IN ('internal','client')) OR
     (role <> 'admin' AND `admin_type` IS NULL)
   )
-) ;
+);
 
 -- ALTER TABLE tasknexus.`users` MODIFY `username` VARCHAR(100) NULL UNIQUE;
 

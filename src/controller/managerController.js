@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const bcrypt = (() => { try { return require("bcryptjs"); } catch { return null; } })();
-const pool = require("../../db").promise();
+const pool = require("../../db");
 
 // ===================== Helpers =====================
 function presenceWindowMinutes() { return 10; }

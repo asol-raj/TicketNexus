@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
-const pool = require("../../db").promise();
+const pool = require("../../db");
 const bcrypt = (() => { try { return require("bcryptjs"); } catch { return null; } })();
 
 // uploads (reused for tickets)

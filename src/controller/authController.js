@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = (() => { try { return require("bcryptjs"); } catch { return null; } })();
-const pool = require("../../db").promise();
+const pool = require("../../db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "change_this_jwt_secret";
 const JWT_EXPIRES = "9h"; // 9 hours

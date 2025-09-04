@@ -1,4 +1,4 @@
-const pool = require("../../db").promise();
+const pool = require("../../db");
 
 async function dashboard(req, res) {
   try {

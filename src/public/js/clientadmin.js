@@ -22,30 +22,6 @@ async function postJSON(url, data) {
   return j;
 }
 
-// Create Manager (modal)
-function bindCreateManager() {
-  const form = document.getElementById("createManagerForm");
-  const msg = document.getElementById("managerMsg");
-  const modalEl = document.getElementById("createManagerModal");
-  if (!form) return;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    msg.textContent = "Saving...";
-    try {
-      const out = await postJSON("/client-admin/managers", Object.fromEntries(new FormData(form).entries()));
-      msg.textContent = "Manager created (user_id: " + out.user_id + ")";
-      form.reset();
-      setTimeout(() => {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        modal?.hide();
-        msg.textContent = "";
-      }, 700);
-    } catch (err) {
-      msg.textContent = err.message;
-    }
-  });
-}
-
 // Tickets (table + recent)
 function renderTicketsTable(tickets) {
   const tb = document.querySelector("#ticketsTable tbody");
@@ -92,7 +68,6 @@ function renderTicketsTable(tickets) {
     tb.appendChild(tr);
   }
 }
-
 
 function renderRecentList(tickets) {
   const list = document.getElementById("recentList");
@@ -205,6 +180,30 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+// Create Manager (modal)
+function bindCreateManager() {
+  const form = document.getElementById("createManagerForm");
+  const msg = document.getElementById("managerMsg");
+  const modalEl = document.getElementById("createManagerModal");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "Saving...";
+    try {
+      const out = await postJSON("/client-admin/managers/create", Object.fromEntries(new FormData(form).entries()));
+      msg.textContent = "Manager created (user_id: " + out.user_id + ")";
+      form.reset();
+      setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal?.hide();
+        msg.textContent = "";
+      }, 700);
+    } catch (err) {
+      msg.textContent = err.message;
+    }
+  });
+}
+
 function bindCreateEmployee() {
   const form = document.getElementById("createEmployeeForm");
   const msg = document.getElementById("empMsg");
@@ -214,40 +213,209 @@ function bindCreateEmployee() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault(); if (msg) msg.textContent = "Saving...";
     try {
-      const out = await postJSON("/client-admin/employees", Object.fromEntries(new FormData(form).entries()));
+      const out = await postJSON("/client-admin/employees/create", Object.fromEntries(new FormData(form).entries()));
       if (msg) msg.textContent = "Employee created (user_id: " + out.user_id + ")";
-      setTimeout(() => { const m = bootstrap.Modal.getInstance(modalEl); m?.hide(); if (msg) msg.textContent = ""; refreshTeam(); }, 700);
+      setTimeout(() => { const m = bootstrap.Modal.getInstance(modalEl); m?.hide(); if (msg) msg.textContent = ""; location.reload(); }, 700);
     } catch (err) { if (msg) msg.textContent = err.message; }
   });
 }
 
+function bindEditEmployee_() {
+  const form = document.getElementById("editEmployeeForm");
+  const msg = document.getElementById("empMsg");
+  const modalEl = document.getElementById("editEmployeeModal");
+  if (!form) return;
+  modalEl?.addEventListener("show.bs.modal", () => { form.reset(); if (msg) msg.textContent = ""; });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault(); if (msg) msg.textContent = "Saving...";
+    try {
+      const out = await postJSON("/client-admin/employees/update", Object.fromEntries(new FormData(form).entries()));
+      if (msg) msg.textContent = "Employee Updated (user_id: " + out.user_id + ")";
+      setTimeout(() => { const m = bootstrap.Modal.getInstance(modalEl); m?.hide(); if (msg) msg.textContent = ""; location.reload(); }, 700);
+    } catch (err) { if (msg) msg.textContent = err.message; }
+  });
+}
+
+function bindCreateUser() {
+  const form = document.getElementById("createUserForm");
+  const msg = document.getElementById("createUserMsg");
+  const modalEl = document.getElementById("createUserModal");
+  if (!form) return;
+
+  modalEl?.addEventListener("show.bs.modal", () => {
+    form.reset();
+    if (msg) msg.textContent = "";
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (msg) msg.textContent = "Creating user...";
+
+    try {
+      const payload = Object.fromEntries(new FormData(form).entries());
+      const out = await postJSON("/client-admin/users/create", payload);
+
+      if (out.success) {
+        msg.textContent = "User created successfully";
+        setTimeout(() => {
+          const m = bootstrap.Modal.getInstance(modalEl);
+          m?.hide();
+          if (msg) msg.textContent = "";
+          location.reload();
+        }, 700);
+      } else {
+        msg.textContent = out.error || "Failed to create user";
+      }
+    } catch (err) {
+      if (msg) msg.textContent = err.message;
+    }
+  });
+}
+
+function bindEditEmployee() {
+  const form = document.getElementById("editEmployeeForm");
+  const msg = document.getElementById("editEmpMsg");
+  const modalEl = document.getElementById("editEmployeeModal");
+  if (!form) return;
+
+  // Reset message when modal opens
+  modalEl?.addEventListener("show.bs.modal", () => {
+    if (msg) msg.textContent = "";
+  });
+
+  // 🎯 Pre-fill form from data attributes
+  document.querySelectorAll(".edit-employee-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      form.querySelector("#editEmpId").value = btn.dataset.id || "";
+      form.querySelector("#editFirstName").value = btn.dataset.firstname || "";
+      form.querySelector("#editLastName").value = btn.dataset.lastname || "";
+      form.querySelector("#editPosition").value = btn.dataset.position || "";
+      form.querySelector("#editRole").value = btn.dataset.role || "employee";
+      form.querySelector("#editManager").value = btn.dataset.manager || "";
+      form.querySelector("#editDOJ").value = btn.dataset.doj || "";
+    });
+  });
+
+  // ✅ Submit handler
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (msg) {
+      msg.textContent = "Saving...";
+      msg.classList.remove("text-danger", "text-success");
+    }
+
+    try {
+      const payload = Object.fromEntries(new FormData(form).entries());
+      const out = await postJSON("/client-admin/employees/update", payload);
+
+      if (!out.success) {
+        // 🛑 Show backend error in red
+        msg.textContent = out.error || "Failed to update employee";
+        msg.classList.add("text-danger");
+        msg.classList.remove("text-success");
+        return;
+      }
+
+      // ✅ Success message in green
+      msg.textContent = "Employee Updated successfully";
+      msg.classList.add("text-success");
+      msg.classList.remove("text-danger");
+
+      setTimeout(() => {
+        const m = bootstrap.Modal.getInstance(modalEl);
+        m?.hide();
+        if (msg) msg.textContent = "";
+        location.reload();
+      }, 700);
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add("text-danger");
+      msg.classList.remove("text-success");
+    }
+  });
+}
+
+
+// document.addEventListener("DOMContentLoaded", () => {
+//   document.querySelectorAll(".edit-employee-btn").forEach(btn => {
+//     btn.addEventListener("click", () => {
+//       console.log(btn.dataset.manager);
+//       document.getElementById("editEmpId").value = btn.dataset.id;
+//       document.getElementById("editFirstName").value = btn.dataset.firstname || "";
+//       document.getElementById("editLastName").value = btn.dataset.lastname || "";
+//       document.getElementById("editPosition").value = btn.dataset.position || "";
+//       document.getElementById("editManager").value = btn.dataset.manager || "";
+//       document.getElementById("editDOJ").value = btn.dataset.doj || "";
+
+//       // Manager dropdown logic
+//       const managerWrapper = document.getElementById("managerWrapper");
+//       const role = btn.dataset.role;
+
+//       if (role === "manager") {
+//         managerWrapper.style.display = "none";
+//       } else {
+//         managerWrapper.style.display = "block";
+//         const managerSelect = document.getElementById("editManager");
+//         if (btn.dataset.manager) {
+//           managerSelect.value = btn.dataset.manager;
+//         } else {
+//           managerSelect.value = "";
+//         }
+//       }
+//     });
+//   });
+// });
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".edit-employee-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.getElementById("editEmpId").value = btn.dataset.id;
+      // Debug dataset
+
+      // Fill modal fields
+      document.getElementById("editEmpId").value = btn.dataset.id || "";
       document.getElementById("editFirstName").value = btn.dataset.firstname || "";
       document.getElementById("editLastName").value = btn.dataset.lastname || "";
       document.getElementById("editPosition").value = btn.dataset.position || "";
-      document.getElementById("editDOJ").value = btn.dataset.doj || "";
 
-      // Manager dropdown logic
-      const managerWrapper = document.getElementById("managerWrapper");
-      const role = btn.dataset.role;
-
-      if (role === "manager") {
-        managerWrapper.style.display = "none";
+      if (btn.dataset.doj && btn.dataset.doj !== "null" && btn.dataset.doj !== "0000-00-00") {
+        document.getElementById("editDOJ").value = btn.dataset.doj;
       } else {
-        managerWrapper.style.display = "block";
-        const managerSelect = document.getElementById("editManager");
-        if (btn.dataset.manager) {
-          managerSelect.value = btn.dataset.manager;
-        } else {
-          managerSelect.value = "";
-        }
+        document.getElementById("editDOJ").value = "";
+      }
+
+      // Role
+      const role = btn.dataset.role || "employee";
+      document.getElementById("editRole").value = role;
+
+      // Manager assignment
+      const managerSelect = document.getElementById("editManager");
+      managerSelect.value = btn.dataset.manager || "";
+
+      // If editing a manager → disable manager assignment
+      if (role === "manager") {
+        managerSelect.value = "";
+        managerSelect.disabled = true;
+      } else {
+        managerSelect.disabled = false;
       }
     });
   });
+
+  // Role change handler inside modal
+  document.getElementById("editRole").addEventListener("change", e => {
+    const role = e.target.value;
+    const managerSelect = document.getElementById("editManager");
+
+    if (role === "manager") {
+      // Managers cannot themselves have managers
+      managerSelect.value = "";
+      managerSelect.disabled = true;
+    } else {
+      managerSelect.disabled = false;
+    }
+  });
 });
+
 
 
 // boot
@@ -255,6 +423,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindCreateManager();
   bindNewTicketForm();
   bindCreateEmployee();
+  bindEditEmployee();
+  bindCreateUser();
   bindFilters();
   refreshTickets();
   setInterval(refreshTickets, 30000);

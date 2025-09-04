@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const router = express.Router();
-const pool = require("../../db").promise();
+const pool = require("../../db");
 
 // Middleware to allow only same client OR internal roles
 function requireSameClientUser(req, res, next) {

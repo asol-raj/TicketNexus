@@ -43,6 +43,11 @@ app.set("views", path.join(__dirname, "src", "views"));
 app.use(expressLayouts);
 app.set("layout", "layouts/layout");
 
+app.use((req, res, next) => {
+  res.locals.hideNavbar = false; // default for all views
+  next();
+});
+
 
 // Routes
 app.use("/", require("./src/router/routes"));

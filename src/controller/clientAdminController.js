@@ -1,10 +1,14 @@
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
-const pool = require("../../db").promise();
+const pool = require("../../db");
 
 // safe bcrypt import
 const bcrypt = (() => { try { return require("bcryptjs"); } catch { return null; } })();
+
+// ---------- (Optional) create employee kept for compatibility ----------
+async function hashPassword(pw) { return bcrypt ? await bcrypt.hash(pw, 10) : pw; }
+
 
 // Uploads for ticket attachments
 const uploadDir = path.join(process.cwd(), "uploads", "tickets");
@@ -144,14 +148,14 @@ async function dashboard(req, res) {
 
     // Employees
     const [employees] = await pool.query(
-      `SELECT e.id, e.first_name, e.last_name, e.position,
+      `SELECT e.id, e.first_name, e.last_name, e.position, e.manager_id,
               u.role, u.username, u.email
         FROM employees e
         JOIN users u ON u.id = e.user_id
         WHERE e.employment_type = 'client'
         and e.user_id <> ?
         and u.client_id = ?
-        ORDER BY e.id desc`,
+        ORDER BY u.username ASC`,
       [req.user.id, clientId]
     );
 
@@ -285,13 +289,16 @@ async function createManager(req, res) {
   }
 }
 
+// console.log(hashPassword('269608').then(pwd=>console.log(pwd)));
+
 // ---------- Action: create client employee (users + employees) ----------
 async function createClientEmployee(req, res) {
   const clientId = req.user.client_id;
   const { username, email, password, first_name, last_name, date_of_joining } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: "email and password are required." });
   try {
-    const pw_hash = bcrypt ? await bcrypt.hash(password, 10) : password;
+    // const pw_hash = bcrypt ? await bcrypt.hash(password, 10) : password;
+    const pw_hash = await hashPassword(password); console.log(pw_hash); //return;
     const [rUser] = await pool.query(
       "INSERT INTO users (client_id, username, email, password_hash, role) VALUES (?,?,?,?, 'employee')",
       [clientId, username || null, email, pw_hash]
@@ -308,6 +315,62 @@ async function createClientEmployee(req, res) {
     console.error("createClientEmployee error:", e);
     if (e && e.code === "ER_DUP_ENTRY") return res.status(409).json({ error: "Email or username already exists." });
     res.status(500).json({ error: "Server error" });
+  }
+}
+
+async function updateEmployee(req, res) {
+  try {
+    const { id, first_name, last_name, position, manager_id, date_of_joining, role } = req.body;
+    const clientId = req.user.client_id;
+
+    // ensure employee belongs to this client
+    const [[emp]] = await pool.query(
+      `SELECT e.id, e.user_id, u.role 
+         FROM employees e 
+         JOIN users u ON u.id = e.user_id 
+        WHERE e.id=? AND u.client_id=? 
+        LIMIT 1`,
+      [id, clientId]
+    );
+    if (!emp) {
+      return res.status(403).json({ success: false, error: "Unauthorized" });
+    }
+
+    // --- Handle role changes ---
+    if (emp.role === "manager" && role === "employee") {
+      // Downgrade manager → employee
+      const [[sub]] = await pool.query(
+        "SELECT COUNT(*) AS cnt FROM employees WHERE manager_id=?",
+        [id]
+      );
+      if (sub.cnt > 0) {
+        return res.status(400).json({ success: false, error: "Cannot downgrade manager with active subordinates." });
+      }
+
+      await pool.query("UPDATE users SET role='employee' WHERE id=?", [emp.user_id]);
+    }
+
+    if (emp.role === "employee" && role === "manager") {
+      // Upgrade employee → manager
+      if (manager_id) {
+        return res.status(400).json({ success: false, error: "A manager cannot be assigned another manager." });
+      }
+
+      await pool.query("UPDATE users SET role='manager' WHERE id=?", [emp.user_id]);
+    }
+
+    // --- Update employee record ---
+    await pool.query(
+      `UPDATE employees 
+          SET first_name=?, last_name=?, position=?, manager_id=?, date_of_joining=?
+        WHERE id=?`,
+      [first_name, last_name, position, manager_id || null, date_of_joining || null, id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("updateEmployee error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 }
 
@@ -705,8 +768,6 @@ async function updateTicketComment(req, res) {
   }
 }
 
-// ---------- (Optional) create employee kept for compatibility ----------
-async function hashPassword(pw) { return bcrypt ? await bcrypt.hash(pw, 10) : pw; }
 async function createEmployeeRow({ user_id, first_name = null, last_name = null, position = null, manager_employee_id = null }) {
   await pool.query(
     "INSERT INTO employees (user_id, first_name, last_name, position, manager_id) VALUES (?,?,?,?,?)",
@@ -736,6 +797,8 @@ async function createEmployee(req, res) {
     res.status(500).json({ error: "Server error" });
   }
 }
+
+
 
 // POST /client-admin/tickets/:id/attachments
 async function addTicketAttachments(req, res) {
@@ -786,32 +849,6 @@ async function updateTicketStatus(req, res) {
     res.json({ success: true, status: dbStatus });
   } catch (e) {
     console.error("clientAdmin updateTicketStatus error:", e);
-    res.status(500).json({ success: false, error: "Server error" });
-  }
-}
-
-async function updateEmployee(req, res) {
-  try {
-    const { id, first_name, last_name, position, manager_id, date_of_joining } = req.body;
-    const clientId = req.user.client_id;
-
-    // ensure employee belongs to this client
-    const [[emp]] = await pool.query(
-      "SELECT e.id FROM employees e WHERE e.id=? AND e.client_id=? LIMIT 1",
-      [id, clientId]
-    );
-    if (!emp) return res.status(403).json({ success: false, error: "Unauthorized" });
-
-    await pool.query(
-      `UPDATE employees 
-          SET first_name=?, last_name=?, position=?, manager_id=?, date_of_joining=?
-        WHERE id=? AND client_id=?`,
-      [first_name, last_name, position, manager_id || null, date_of_joining || null, id, clientId]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("updateEmployee error:", err);
     res.status(500).json({ success: false, error: "Server error" });
   }
 }
@@ -920,24 +957,78 @@ async function editTicket(req, res) { //console.log(req.body); return;
   }
 }
 
+async function createUserWithEmployee(req, res) {
+  const clientId = req.user.client_id;
+  const {
+    username,
+    email,
+    password,
+    first_name,
+    last_name,
+    date_of_joining,
+    position,
+    role, // "employee" or "manager"
+  } = req.body || {};
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "email and password are required." });
+  }
+
+  try {
+    const pw_hash = await hashPassword(password);
+
+    // Insert into users with chosen role
+    const [rUser] = await pool.query(
+      "INSERT INTO users (client_id, username, email, password_hash, role) VALUES (?,?,?,?, ?)",
+      [clientId, username || null, email, pw_hash, role]
+    );
+    const user_id = rUser.insertId;
+
+    // Default position text if none supplied
+    let pos = position || (role === "manager" ? "Manager" : "Employee");
+
+    // Manager should normally report to client admin’s manager node
+    let manager_id = null;
+    if (role === "manager") {
+      manager_id = await getManagerEmployeeId(req.user.id);
+    }
+
+    await pool.query(
+      `INSERT INTO employees (user_id, first_name, last_name, position, manager_id, date_of_joining, employment_type)
+       VALUES (?,?,?,?,?,?, 'client')`,
+      [user_id, first_name || null, last_name || null, pos, manager_id, date_of_joining || null]
+    );
+
+    res.json({ success: true, user_id });
+  } catch (err) {
+    console.error("createUserWithEmployee error:", err);
+    if (err && err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ error: "Email or username already exists." });
+    }
+    res.status(500).json({ error: "Server error" });
+  }
+}
+
+
 module.exports = {
   attachmentsMiddleware,
   dashboard,
   listAssignees,
   listTickets,
   createManager,
+  createClientEmployee,     // NEW
+  createEmployee,        // kept for compatibility
+  updateEmployee,
   createTicket,
   ticketPage,
   listTicketComments,
   createTicketComment,
   updateTicketComment,   // NEW
-  createEmployee,        // kept for compatibility
   addTicketAttachments,
   updateTicketStatus,
-  createClientEmployee,     // NEW
   resetEmployeePassword,
-  updateEmployee,
   listTicketsWithStatus,
   discardTicket,
-  editTicket
+  editTicket,
+  createUserWithEmployee
 };

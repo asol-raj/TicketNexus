@@ -5,10 +5,10 @@
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newTicketModal">
         <i class="bi bi-plus-lg"></i> Create New Ticket
       </button>
-      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createManagerModal">
+      <!-- <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createManagerModal">
         <i class="bi bi-plus-lg"></i> Create Manager
-      </button>
-      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createEmployeeModal">
+      </button> -->
+      <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createUserModal">
         <i class="bi bi-plus-lg"></i> Create Employee
       </button>
     </div>
@@ -106,9 +106,10 @@
             <thead class="table-light">
               <tr>
                 <th>Name</th>
+                <th>Username</th>
                 <th>Position</th>
-                <th>Role</th>
-                <th></th>
+                <!-- <th>Role</th> -->
+                <th>Edit</th>
               </tr>
             </thead>
             <tbody>
@@ -119,18 +120,23 @@
                   <?= e.last_name ?>
                 </td>
                 <td>
+                  <?= e.username ?>
+                </td>
+                <td>
                   <?= e.position || '-' ?>
                 </td>
-                <td><span class="badge bg-secondary">
+                <!-- <td><span class="badge bg-secondary">
                     <?= e.role ?>
-                  </span></td>
+                  </span>
+                </td> -->
                 <td>
-                  <button class="btn btn-sm btn-outline-primary edit-employee-btn" data-id="<?= e.id ?>"
+                  <button class="btn btn-sm edit-employee-btn" data-id="<?= e.id ?>"
                     data-firstname="<?= e.first_name ?>" data-lastname="<?= e.last_name ?>"
                     data-position="<?= e.position ?>" data-role="<?= e.role ?>" data-manager="<?= e.manager_id ?>"
                     data-doj="<?= e.date_of_joining ?>" data-bs-toggle="modal" data-bs-target="#editEmployeeModal">
-                    Edit
+                    <i class="bi bi-pencil-square"></i>
                   </button>
+
                 </td>
               </tr>
               <? }) ?>
@@ -142,14 +148,77 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
 
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form class="modal-content" id="createUserForm">
+      <div class="modal-header">
+        <h5 class="modal-title">Create User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
 
+      <div class="modal-body vstack gap-2">
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">First name (optional)</label>
+            <input class="form-control" name="first_name" placeholder="">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Last name (optional)</label>
+            <input class="form-control" name="last_name" placeholder="">
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Username (optional)</label>
+            <input class="form-control" name="username">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Position (optional)</label>
+            <input class="form-control" name="position">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Email Address (required)</label>
+          <input class="form-control" name="email" type="email" required>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Password</label>
+            <input class="form-control" name="password" type="password" required>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Date of Joining</label>
+            <input class="form-control" name="date_of_joining" type="date">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">System Role</label>
+          <select class="form-select" name="role" required>
+            <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div id="createUserMsg" class="me-auto small"></div>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" type="submit">Create</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- Create Employee Modal -->
 <div class="modal fade" id="createEmployeeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <form class="modal-content" id="createEmployeeForm">
       <div class="modal-header">
         <h5 class="modal-title">Create Client Employee</h5>
@@ -160,12 +229,31 @@
           <div class="col-6"><input class="form-control" name="first_name" placeholder="First name"></div>
           <div class="col-6"><input class="form-control" name="last_name" placeholder="Last name"></div>
         </div>
-        <input class="form-control" name="username" placeholder="Username (optional)">
-        <input class="form-control" name="email" type="email" placeholder="Email" required>
-        <input class="form-control" name="password" type="password" placeholder="Password" required>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Username (optional)</label>
+            <input class="form-control" name="username" placeholder="">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Position (optional)</label>
+            <input class="form-control" name="position" placeholder="">
+          </div>
+        </div>
         <div>
-          <label class="form-label mb-1">Date of joining</label>
-          <input class="form-control" name="date_of_joining" type="date">
+          <label class="form-label">Email Address (Required)</label>
+          <input class="form-control" name="email" type="email" placeholder="name@email.com" required>
+        </div>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Password</label>
+            <input class="form-control" name="password" type="password" required>
+          </div>
+          <div class="col-6">
+            <div>
+              <label class="form-label">Date of joining</label>
+              <input class="form-control" name="date_of_joining" type="date">
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -179,40 +267,66 @@
 
 <!-- Edit Employee Modal -->
 <div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <form class="modal-content" id="editEmployeeForm">
       <div class="modal-header">
         <h5 class="modal-title">Edit Employee</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+
       <div class="modal-body vstack gap-2">
+        <!-- Hidden employee ID -->
         <input type="hidden" name="id" id="editEmpId">
-        <div class="row g-2">
-          <div class="col-6"><input class="form-control" name="first_name" id="editFirstName" placeholder="First name">
+
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">First name</label>
+            <input class="form-control" name="first_name" id="editFirstName" placeholder="">
           </div>
-          <div class="col-6"><input class="form-control" name="last_name" id="editLastName" placeholder="Last name">
+          <div class="col-6">
+            <label class="form-label">Last name</label>
+            <input class="form-control" name="last_name" id="editLastName" placeholder="">
           </div>
         </div>
-        <input class="form-control" name="position" id="editPosition" placeholder="Position">
 
-        <div id="managerWrapper">
-          <label class="form-label mb-1">Manager</label>
-          <select class="form-select" name="manager_id" id="editManager">
-            <option value="">None</option>
-            <? managers.forEach(m => { ?>
-            <option value="<?= m.id ?>">
-              <?= m.first_name ?>
-              <?= m.last_name ?>
-            </option>
-            <? }) ?>
-          </select>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Position</label>
+            <input class="form-control" name="position" id="editPosition" placeholder="">
+          </div>
+
+          <!-- Role (manager/employee) -->
+          <div class="col-6">
+            <label class="form-label">Role</label>
+            <select class="form-select" name="role" id="editRole">
+              <option value="employee">Employee</option>
+              <option value="manager">Manager</option>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label class="form-label mb-1">Date of Joining</label>
-          <input class="form-control" name="date_of_joining" type="date" id="editDOJ">
+        <div class="row g-2 mb-2">
+          <!-- Manager assignment -->
+          <div class="col-6" id="managerWrapper">
+            <label class="form-label">Manager</label>
+            <select class="form-select" name="manager_id" id="editManager">
+              <option value="">None</option>
+              <? managers.forEach(m => { ?>
+              <option value="<?= m.id ?>">
+                <?= m.first_name ?>
+                <?= m.last_name ?>
+              </option>
+              <? }) ?>
+            </select>
+          </div>
+
+          <div class="col-6">
+            <label class="form-label">Date of Joining</label>
+            <input class="form-control" name="date_of_joining" type="date" id="editDOJ">
+          </div>
         </div>
       </div>
+
       <div class="modal-footer">
         <div id="editEmpMsg" class="me-auto small"></div>
         <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
@@ -221,6 +335,8 @@
     </form>
   </div>
 </div>
+
+
 
 <!-- Create Manager Modal -->
 <div class="modal fade" id="createManagerModal" tabindex="-1" aria-hidden="true">
