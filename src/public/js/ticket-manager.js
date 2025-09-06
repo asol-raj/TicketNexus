@@ -181,4 +181,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+   // Handle edit form submit
+  document.getElementById("editTicketForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target); //console.log(formData);
+
+    const ticketId = formData.get("ticket_id"); //console.log(ticketId); return;
+
+    const payload = {
+      subject: formData.get("subject"),
+      description: formData.get("description"),
+      due_option: formData.get("due_option"),
+      due_at: formData.get("due_at"),
+      assigned_to: formData.get("assigned_to"),
+      priority: formData.get("priority"),
+    }; //console.log(payload); return;
+
+    const res = await fetch(`/client-manager/tickets/${ticketId}/edit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("editTicketMsg").innerText = "Ticket updated successfully!";
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      document.getElementById("editTicketMsg").innerText = "Error: " + data.message;
+    }
+  });
+
 });

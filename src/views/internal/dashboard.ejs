@@ -15,187 +15,197 @@
     </div>
   </div>
 
-  <!-- KPI Cards -->
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="open">
-        <div class="card-body">
-          <i class="bi bi-ticket-detailed display-6 text-info"></i>
-          <div class="fw-bold mt-2">Open / Pending</div>
-          <div class="h3 mb-0" id="openCount">
-            <?= summary?.open_tickets || 0 ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable"  data-filter="resolved">
-        <div class="card-body">
-          <i class="bi bi-bookmark-check display-6 text-warning"></i>
-          <div class="fw-bold mt-2">Resolved</div>
-          <div class="h3 mb-0">
-            <?= summary?.resolved_tickets ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="closed">
-        <div class="card-body">
-          <i class="bi bi-check2-circle display-6 text-success"></i>
-          <div class="fw-bold mt-2">Closed Tickets</div>
-          <div class="h3 mb-0" id="closedCount">
-            <?= summary?.closed_tickets || 0 ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="expired">
-        <div class="card-body">
-          <i class="bi bi-ban display-6 text-danger"></i>
-          <div class="fw-bold mt-2">Expired</div>
-          <div class="h3 mb-0" id="expiredCount">
-            <?= summary?.expired_tickets || 0 ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="archived">
-        <div class="card-body">
-          <i class="bi bi-archive display-6 text-secondary"></i>
-          <div class="fw-bold mt-2">Archived</div>
-          <div class="h3 mb-0" id="archivedCount">
-            <?= summary?.archived_tickets || 0 ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-lg-2">
-      <div class="card kpi-card shadow-sm text-center clickable" data-filter="all">
-        <div class="card-body">
-          <i class="bi bi-list-task display-6 text-primary"></i>
-          <div class="fw-bold mt-2">All Tickets</div>
-          <div class="h3 mb-0">
-            <?= summary.total_tickets ?>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SLA Breakdown -->
-  <div class="row g-3 mb-4 text-center">
-    <div class="col-6 col-md-2">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="fw-bold text-success">Low</div>
-          <div class="h3" id="slaLow">
-            <?= summary.sla.low ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-2">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="fw-bold text-info">Medium</div>
-          <div class="h3" id="slaMedium">
-            <?= summary.sla.medium ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-2">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="fw-bold text-warning">High</div>
-          <div class="h3" id="slaHigh">
-            <?= summary.sla.high ?>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-2">
-      <div class="card shadow-sm h-100">
-        <div class="card-body">
-          <div class="fw-bold text-danger">Urgent</div>
-          <div class="h3" id="slaUrgent">
-            <?= summary.sla.urgent ?>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tickets List -->
-  <div class="card shadow-sm">
-    <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-      <span>Tickets</span>
-      <small class="text-muted" id="ticketFilterLabel">Showing latest 100</small>
-    </div>
-    <div class="list-group list-group-flush" id="ticketList" style="max-height: 70vh; overflow:auto;">
-      <? if (tickets && tickets.length) { ?>
-      <? tickets.forEach(t => { ?>
-      <div class="list-group-item <? if (t.is_expired) { ?> bg-danger-subtled <? } ?>">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <strong>
-              <a class="text-decoration-none ticket-link" href="/internal/tickets/<?= t.id ?>" target="_blank">
-                #
-                <?= t.id ?> ·
-                <?= (t.subject || 'Ticket') ?>
-              </a>
-            </strong>
-            <div class="small text-muted">
-              Status:
-              <? if (t.is_expired) { ?>
-              <span class="text-danger fw-bold">Expired</span>
-              <? } else { ?>
-              <?= t.status || 'n/a' ?>
-              <? } ?>
-              · Assignee:
-              <?= t.assignee_label || 'Unassigned' ?>
-
-              <? if (t.status === 'closed') { ?>
-              · <a href="#" class="text-decoration-none text-danger archive-link" data-id="<?= t.id ?>">
-                Mark Archived
-              </a>
-              <? } ?>
+  <div class="row">
+    <div class="col-12 col-lg-6">
+      <!-- KPI Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-4">
+          <div class="card kpi-card shadow-sm text-center clickable" data-filter="open">
+            <div class="card-body">
+              <i class="bi bi-ticket-detailed display-6 text-info"></i>
+              <div class="fw-bold mt-2">Open / Pending</div>
+              <div class="h3 mb-0" id="openCount">
+                <?= summary?.open_tickets || 0 ?>
+              </div>
             </div>
           </div>
-          <div class="text-end">
-            <!-- Priority badge -->
-            <span class="badge text-uppercase 
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card kpi-card shadow-sm text-center clickable" data-filter="resolved">
+            <div class="card-body">
+              <i class="bi bi-bookmark-check display-6 text-warning"></i>
+              <div class="fw-bold mt-2">Resolved</div>
+              <div class="h3 mb-0">
+                <?= summary?.resolved_tickets ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card kpi-card shadow-sm text-center clickable" data-filter="closed">
+            <div class="card-body">
+              <i class="bi bi-check2-circle display-6 text-success"></i>
+              <div class="fw-bold mt-2">Closed Tickets</div>
+              <div class="h3 mb-0" id="closedCount">
+                <?= summary?.closed_tickets || 0 ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card kpi-card shadow-sm text-center clickable" data-filter="expired">
+            <div class="card-body">
+              <i class="bi bi-ban display-6 text-danger"></i>
+              <div class="fw-bold mt-2">Past Due</div>
+              <div class="h3 mb-0" id="expiredCount">
+                <?= summary?.expired_tickets || 0 ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card kpi-card shadow-sm text-center clickable" data-filter="archived">
+            <div class="card-body">
+              <i class="bi bi-archive display-6 text-secondary"></i>
+              <div class="fw-bold mt-2">Archived</div>
+              <div class="h3 mb-0" id="archivedCount">
+                <?= summary?.archived_tickets || 0 ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card kpi-card shadow-sm text-center clickable" data-filter="all">
+            <div class="card-body">
+              <i class="bi bi-list-task display-6 text-primary"></i>
+              <div class="fw-bold mt-2">All Tickets</div>
+              <div class="h3 mb-0">
+                <?= summary.total_tickets ?>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLA Breakdown -->
+      <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-md-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <div class="fw-bold text-success">Low</div>
+              <div class="h3" id="slaLow">
+                <?= summary.sla.low ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <div class="fw-bold text-info">Medium</div>
+              <div class="h3" id="slaMedium">
+                <?= summary.sla.medium ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <div class="fw-bold text-warning">High</div>
+              <div class="h3" id="slaHigh">
+                <?= summary.sla.high ?>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <div class="fw-bold text-danger">Urgent</div>
+              <div class="h3" id="slaUrgent">
+                <?= summary.sla.urgent ?>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <!-- Tickets List -->
+      <div class="card shadow-sm">
+        <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+          <span>Tickets</span>
+          <small class="text-muted" id="ticketFilterLabel">Showing latest 100</small>
+        </div>
+        <div class="list-group list-group-flush" id="ticketList" style="max-height: 70vh; overflow:auto;">
+          <? if (tickets && tickets.length) { ?>
+          <? tickets.forEach(t => { ?>
+          <div class="list-group-item <? if (t.is_expired) { ?> bg-danger-subtled <? } ?>">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <strong>
+                  <a class="text-decoration-none ticket-link" href="/internal/tickets/<?= t.id ?>" target="_blank">
+                    #
+                    <?= t.id ?> ·
+                    <?= (t.subject || 'Ticket') ?>
+                  </a>
+                </strong>
+                <div class="small text-muted">
+                  Status:
+                  <? if (t.is_expired) { ?>
+                  <span class="text-danger fw-bold">Past Due</span>
+                  <? } else { ?>
+                  <?= t.status || 'n/a' ?>
+                  <? } ?>
+                  · Assignee:
+                  <?= t.assignee_label || 'Unassigned' ?>
+
+                  <? if (t.status === 'closed') { ?>
+                  · <a href="#" class="text-decoration-none text-danger archive-link" data-id="<?= t.id ?>">
+                    Mark Archived
+                  </a>
+                  <? } ?>
+                </div>
+              </div>
+              <div class="text-end">
+                <!-- Priority badge -->
+                <span class="badge text-uppercase 
                 <? if (t.priority === 'urgent') { ?> bg-danger 
                 <? } else if (t.priority === 'high') { ?> bg-warning
                 <? } else if (t.priority === 'medium') { ?> bg-info
                 <? } else if (t.priority === 'low') { ?> bg-success
                 <? } else { ?> bg-secondary <? } ?>">
-              <?= t.priority || 'n/a' ?>
-            </span>
-            <br>
-            <!-- Due / Expired badge -->
-            <? if (t.is_expired) { ?>
-            <span class="badge bg-danger mt-1">Expired</span>
-            <? } else if (t.due_at) { ?>
-            <span class="badge bg-secondary mt-1">
-              Due:
-              <?= new Date(t.due_at).toLocaleDateString() ?>
-            </span>
-            <? } else { ?>
-            <span class="badge bg-light text-muted mt-1">No Due Date</span>
-            <? } ?>
+                  <?= t.priority || 'n/a' ?>
+                </span>
+                <br>
+                <!-- Due / Expired badge -->
+                <? if (t.is_expired) { ?>
+                <span class="badge bg-danger mt-1">Past Due</span>
+                <? } else if (t.due_at) { ?>
+                <span class="badge bg-secondary mt-1">
+                  Due:
+                  <?= new Date(t.due_at).toLocaleDateString() ?>
+                </span>
+                <? } else { ?>
+                <span class="badge bg-light text-muted mt-1">No Due Date</span>
+                <? } ?>
+              </div>
+            </div>
           </div>
+          <? }) ?>
+          <? } else { ?>
+          <div class="list-group-item text-muted">No tickets found.</div>
+          <? } ?>
         </div>
       </div>
-      <? }) ?>
-      <? } else { ?>
-      <div class="list-group-item text-muted">No tickets found.</div>
-      <? } ?>
+
     </div>
   </div>
+
+
+
 
 
 </div>

@@ -63,7 +63,7 @@ function renderTickets(tickets) {
 
   tickets.forEach(t => {
     const dueBadge = t.is_expired
-      ? `<span class="badge bg-danger mt-1">Expired</span>`
+      ? `<span class="badge bg-danger mt-1">Past Due</span>`
       : t.due_at
         ? `<span class="badge bg-secondary mt-1">Due: ${new Date(t.due_at).toLocaleDateString()}</span>`
         : `<span class="badge bg-light text-muted mt-1">No Due Date</span>`;
@@ -85,7 +85,7 @@ function renderTickets(tickets) {
               </a>              
             </strong>
             <div class="small text-muted">
-              Status: ${t.is_expired ? `<span class="text-danger fw-bold">Expired</span>` : (t.status || "n/a")}
+              Status: ${t.is_expired ? `<span class="text-danger fw-bold">Past Due</span>` : (t.status || "n/a")}
               · Assignee: ${t.assignee_label || "Unassigned"}
               ${archiveLink}
             </div>
@@ -329,8 +329,6 @@ document.addEventListener("click", async (e) => {
 
 
 
-
-
 // --- Init ---
 document.addEventListener("DOMContentLoaded", async () => {
   bindKpiFilters();
@@ -342,5 +340,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initManagerAwareEmployeeForm();
 
   setInterval(refreshSummary, 30000);
-  setInterval(pingPresence, 120000);
+  // setInterval(pingPresence, 120000);
 });

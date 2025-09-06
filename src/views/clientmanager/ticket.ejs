@@ -1,11 +1,37 @@
-<div class="container-fluid py-3"
-     id="ticketPage"
-     data-ticket-id="<?= ticket.id ?>"
-     data-user-id="<?= user.id ?>">
+<div class="container-fluid py-3" id="ticketPage" data-ticket-id="<?= ticket.id ?>" data-user-id="<?= user.id ?>">
 
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Ticket # <?= ticket.id ?> — <?= ticket.subject ?></h2>
+    <div class="d-flex justify-content-between align-items-center mb-0 gap-3">
+      <h3 class="mb-0">Ticket #
+        <?= ticket.id ?> —
+        <?= ticket.subject ?>
+        </h2>
+        <div>          
+          <? if (ticket.status !=='discarded' ) { ?>
+          <form action="/client-manager/tickets/<?= ticket.id ?>/discard" method="POST" class="d-inline"
+            onsubmit="return confirm('Discard this ticket?')">
+            <button type="submit" class="btn btn-danger btn-sm"
+            <? if (ticket.raised_by !== user.id) { ?>
+              disabled title="Not allowed"
+            <? } ?>
+            data-bs-toggle="modal"
+            data-bs-target="#editTicketModal">
+            Discard
+          </button>
+          </form>
 
+          <!-- Edit Ticket Button -->
+          <button type="button" class="btn btn-warning btn-sm ms-2"
+            <? if (ticket.raised_by !== user.id) { ?>
+              disabled title="Not allowed"
+            <? } ?>
+            data-bs-toggle="modal"
+            data-bs-target="#editTicketModal">
+            Edit
+          </button>
+          <? } ?>
+        </div>
+    </div>
     <?
       let badgeClass = "bg-secondary";
       if (ticket.status === "open") badgeClass = "bg-info";
@@ -13,11 +39,14 @@
       else if (ticket.status === "resolved" || ticket.status === "closed") badgeClass = "bg-success";
     ?>
     <div class="d-flex align-items-center gap-2">
-      <span class="badge <?= badgeClass ?> text-uppercase" id="statusBadge"><?= ticket.status ?></span>
+      <span class="badge <?= badgeClass ?> text-uppercase" id="statusBadge">
+        <?= ticket.status ?>
+      </span>
       <select id="statusSelect" class="form-select form-select-sm" style="width:auto;">
-        <option value="pending"     <?= ticket.status==='open' ? 'selected' : '' ?>>Pending</option>
-        <option value="in_progress" <?= ticket.status==='in_progress' ? 'selected' : '' ?>>In&nbsp;Progress</option>
-        <option value="resolved"    <?= (ticket.status==='closed'||ticket.status==='resolved') ? 'selected' : '' ?>>Resolved</option>
+        <option value="pending" <?=ticket.status==='open' ? 'selected' : '' ?>>Pending</option>
+        <option value="in_progress" <?=ticket.status==='in_progress' ? 'selected' : '' ?>>In&nbsp;Progress</option>
+        <option value="resolved" <?=(ticket.status==='closed' ||ticket.status==='resolved' ) ? 'selected' : '' ?>
+          >Resolved</option>
       </select>
       <button class="btn btn-sm btn-outline-primary" id="applyStatus">Update</button>
     </div>
@@ -29,16 +58,27 @@
       <div class="card shadow-sm mb-3">
         <div class="card-header fw-bold">Details</div>
         <div class="card-body">
-          <div class="mb-2"><strong>Priority:</strong> <span class="text-uppercase"><?= ticket.priority ?></span></div>
+          <div class="mb-2"><strong>Priority:</strong> <span class="text-uppercase">
+              <?= ticket.priority ?>
+            </span></div>
           <div class="d-flex justify-content-between align-items-center gap-5 flex-wrap">
-            <div class="mb-2"><strong>Raised by:</strong> <?= ticket.raised_by_label ?></div>
-            <div class="mb-2"><strong>Assignee:</strong> <?= ticket.assignee_label || 'Unassigned' ?></div>
-            <div><strong>Created:</strong> <?= new Date(ticket.created_at).toLocaleString() ?></div>
+            <div class="mb-2"><strong>Raised by:</strong>
+              <?= ticket.raised_by_label ?>
+            </div>
+            <div class="mb-2"><strong>Assignee:</strong>
+              <?= ticket.assignee_label || 'Unassigned' ?>
+            </div>
+            <div><strong>Created:</strong>
+              <?= new Date(ticket.created_at).toLocaleString() ?>
+            </div>
             <? if (ticket.due_at) { ?>
-              <div><strong>Due:</strong> <?= new Date(ticket.due_at).toLocaleString() ?></div>
+            <div><strong>Due:</strong>
+              <?= new Date(ticket.due_at).toLocaleString() ?>
+            </div>
             <? } ?>
           </div>
-          <strong>Description:</strong> <?= ticket.description ?>
+          <strong>Description:</strong>
+          <?= ticket.description ?>
         </div>
       </div>
 
@@ -46,29 +86,36 @@
         <div class="card-header fw-bold">Progress / Follow-ups</div>
         <div class="card-body d-flex flex-column">
           <form id="commentForm" class="vstack gap-2 mb-3">
-            <textarea class="form-control" name="content" id="commentContent" rows="3" placeholder="Write an update..." required></textarea>
+            <textarea class="form-control" name="content" id="commentContent" rows="3" placeholder="Write an update..."
+              required></textarea>
             <button class="btn btn-primary btn-sm" type="submit">Post Update</button>
             <div id="commentMsg" class="small"></div>
           </form>
 
           <div id="commentList" class="vstack gap-3">
             <? if (comments && comments.length) { ?>
-              <? comments.forEach(p => { ?>
-                <div class="mb-3 border-bottom pb-2" data-comment-id="<?= p.id ?>" data-author-id="<?= p.author_id ?>">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <strong><?= p.author_label || 'User' ?></strong>
-                      <span class="small text-muted">· <?= new Date(p.created_at).toLocaleString() ?></span>
-                    </div>
-                    <? if (p.author_id === user.id) { ?>
-                      <button class="btn edit-comment"><i class="bi bi-pencil-square"></i></button>
-                    <? } ?>
-                  </div>
-                  <div class="mt-1 comment-content" style="white-space:pre-wrap;"><?= p.content ?></div>
+            <? comments.forEach(p => { ?>
+            <div class="mb-3 border-bottom pb-2" data-comment-id="<?= p.id ?>" data-author-id="<?= p.author_id ?>">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>
+                    <?= p.author_label || 'User' ?>
+                  </strong>
+                  <span class="small text-muted">·
+                    <?= new Date(p.created_at).toLocaleString() ?>
+                  </span>
                 </div>
-              <? }) ?>
+                <? if (p.author_id === user.id) { ?>
+                <button class="btn edit-comment"><i class="bi bi-pencil-square"></i></button>
+                <? } ?>
+              </div>
+              <div class="mt-1 comment-content" style="white-space:pre-wrap;">
+                <?= p.content ?>
+              </div>
+            </div>
+            <? }) ?>
             <? } else { ?>
-              <div class="text-muted">No updates yet.</div>
+            <div class="text-muted">No updates yet.</div>
             <? } ?>
           </div>
         </div>
@@ -86,37 +133,123 @@
         </div>
         <div class="card-body">
           <? if (attachments && attachments.length) { ?>
-            <div class="row g-2" id="attachmentGrid">
-              <? attachments.forEach(a => { ?>
-              <div class="col-12 <?= a.is_image ? 'col-sm-6' : '' ?> attachment-item" data-attach-id="<?= a.id ?>">
-                <div class="border rounded p-2 h-100">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="small text-muted">
-                      Uploaded by: <?= a.uploader_label || 'Unknown' ?> · <?= new Date(a.uploaded_at).toLocaleString() ?>
-                    </div>
-                    <? if (a.uploaded_by === user.id) { ?>
-                      <button class="btn btn-sm btn-outline-danger delete-attachment" data-id="<?= a.id ?>"><i class="bi bi-trash"></i></button>
-                    <? } ?>
+          <div class="row g-2" id="attachmentGrid">
+            <? attachments.forEach(a => { ?>
+            <div class="col-12 <?= a.is_image ? 'col-sm-6' : '' ?> attachment-item" data-attach-id="<?= a.id ?>">
+              <div class="border rounded p-2 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="small text-muted">
+                    Uploaded by:
+                    <?= a.uploader_label || 'Unknown' ?> ·
+                    <?= new Date(a.uploaded_at).toLocaleString() ?>
                   </div>
-                  <? if (a.is_image) { ?>
-                    <a href="/attachments/<?= a.id ?>" target="_blank" class="d-block">
-                      <img src="/attachments/<?= a.id ?>" alt="attachment" class="img-fluid rounded">
-                    </a>
-                  <? } else { ?>
-                    <a class="d-block" href="/attachments/<?= a.id ?>" target="_blank">
-                      <?= (a.file_path || '').split('/').slice(-1)[0] ?>
-                    </a>
+                  <? if (a.uploaded_by === user.id) { ?>
+                  <button class="btn btn-sm btn-outline-danger delete-attachment" data-id="<?= a.id ?>"><i
+                      class="bi bi-trash"></i></button>
                   <? } ?>
                 </div>
+                <? if (a.is_image) { ?>
+                <a href="/attachments/<?= a.id ?>" target="_blank" class="d-block">
+                  <img src="/attachments/<?= a.id ?>" alt="attachment" class="img-fluid rounded">
+                </a>
+                <? } else { ?>
+                <a class="d-block" href="/attachments/<?= a.id ?>" target="_blank">
+                  <?= (a.file_path || '').split('/').slice(-1)[0] ?>
+                </a>
+                <? } ?>
               </div>
-              <? }) ?>
             </div>
+            <? }) ?>
+          </div>
           <? } else { ?>
-            <div class="text-muted">No attachments.</div>
+          <div class="text-muted">No attachments.</div>
           <? } ?>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Edit Ticket Modal -->
+<div class="modal fade" id="editTicketModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <form class="modal-content" id="editTicketForm" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Ticket</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="vstack gap-2">
+          <!-- Hidden ticket ID -->
+          <input type="hidden" name="ticket_id" value="<?= ticket.id ?>">
+
+          <!-- Subject -->
+          <div class="row g-2">
+            <div class="col-8">
+              <label class="form-label">Subject</label>
+              <input class="form-control" name="subject" value="<?= ticket.subject ?>" required>
+            </div>
+            <div class="col-4">
+              <label class="form-label">Priority</label>
+              <select class="form-select" name="priority">
+                <option value="low" <?=ticket.priority==='low' ? 'selected' : '' ?> >Low</option>
+                <option value="medium"<?=ticket.priority==='medium' ? 'selected' : '' ?> >Medium</option>
+                <option value="high"<?=ticket.priority==='high' ? 'selected' : '' ?> >High</option>
+                <option value="urgent"<?=ticket.priority==='urgent' ? 'selected' : '' ?> >Urgent</option>
+              </select>
+            </div>
+          </div>
+
+
+          <!-- Description -->
+          <textarea class="form-control" name="description" placeholder="Describe the issue"
+            rows="4"><?= ticket.description ?></textarea>
+
+          <div class="row g-2">
+            <!-- Due Option -->
+            <div class="col-md-4">
+              <label class="form-label">Due Option</label>
+              <select class="form-select" name="due_option" id="editDueOptionSelect">
+                <option value="today" <?=ticket.due_option==='today' ? 'selected' : '' ?>>Today</option>
+                <option value="tomorrow" <?=ticket.due_option==='tomorrow' ? 'selected' : '' ?>>By Tomorrow</option>
+                <option value="this_week" <?=ticket.due_option==='this_week' ? 'selected' : '' ?>>By This Week</option>
+                <option value="next_week" <?=ticket.due_option==='next_week' ? 'selected' : '' ?>>By Next Week</option>
+                <option value="custom" <?=ticket.due_option==='custom' ? 'selected' : '' ?>>Custom Date</option>
+              </select>
+            </div>
+
+            <!-- Custom Due Date -->
+            <div class="col-md-4 <?= ticket.due_option === 'custom' ? '' : 'd-none' ?>" id="editCustomDueWrapper">
+              <label class="form-label">Due Date</label>
+              <input class="form-control" name="due_at" type="datetime-local" value="<?= ticket.due_at_formatted  ?>">
+            </div>
+
+            <!-- Assignee -->
+
+
+            <div class="col-md-4">
+              <label class="form-label">Assign to (optional)</label>
+              <select class="form-select" name="assigned_to" id="editAssigneeSelect">
+                <option value="" <?=!ticket.assigned_to ? 'selected' : '' ?>>Unassigned</option>
+                <? employees.forEach(emp => { ?>
+                <option value="<?= emp.id ?>" <?=ticket.assigned_to===emp.id ? 'selected' : '' ?>>
+                  <?= emp.first_name ?>
+                  <?= emp.last_name ?>
+                </option>
+                <? }) ?>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div id="editTicketMsg" class="me-auto small"></div>
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" type="submit">Save Changes</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -125,7 +258,9 @@
   <div class="modal-dialog">
     <form class="modal-content" id="addAttachmentsForm" enctype="multipart/form-data">
       <div class="modal-header">
-        <h5 class="modal-title">Add Attachments to Ticket #<?= ticket.id ?></h5>
+        <h5 class="modal-title">Add Attachments to Ticket #
+          <?= ticket.id ?>
+        </h5>
         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">

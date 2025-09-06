@@ -25,18 +25,88 @@ async function getManagerEmployeeId(userId) {
   return row ? row.id : null;
 }
 
+function formatDue(ticket) {
+  if (!ticket.due_option) {
+    return ticket.due_at ? new Date(ticket.due_at).toLocaleString() : "No Due Date";
+  }
+  switch (ticket.due_option) {
+    case "today":
+      return `Today (${ticket.due_at ? new Date(ticket.due_at).toLocaleString() : ""})`;
+    case "tomorrow":
+      return `Tomorrow (${ticket.due_at ? new Date(ticket.due_at).toLocaleString() : ""})`;
+    case "this_week":
+      return `This Week (${ticket.due_at ? new Date(ticket.due_at).toLocaleString() : ""})`;
+    case "next_week":
+      return `Next Week (${ticket.due_at ? new Date(ticket.due_at).toLocaleString() : ""})`;
+    case "custom":
+      return ticket.due_at ? new Date(ticket.due_at).toLocaleString() : "Custom (no date)";
+    default:
+      return ticket.due_at ? new Date(ticket.due_at).toLocaleString() : "No Due Date";
+  }
+}
+
 // ---------- Page ----------
 async function dashboard(req, res) {
-  const clientId = req.user.client_id;
-  const [[{ total_tickets = 0 } = {}]] = await pool.query(
-    "SELECT COUNT(*) AS total_tickets FROM tickets WHERE client_id=?",
-    [clientId]
-  );
-  res.render("clientmanager/dashboard", {
-    title: "Client Manager Dashboard",
-    user: req.user,
-    totals: { total_tickets },
-  });
+  try {
+    const clientId = req.user.client_id;
+    // const [[{ total_tickets = 0 } = {}]] = await pool.query(
+    //   "SELECT COUNT(*) AS total_tickets FROM tickets WHERE client_id=?",
+    //   [clientId]
+    // );
+
+    // Tickets list (only open + in_progress for dashboard table)
+    const [tickets] = await pool.query(
+      `SELECT 
+        t.id, t.subject, t.status, t.priority, e.first_name as raised_by, t.created_at, t.due_at, t.assigned_to,
+        COALESCE(CONCAT(ae.first_name,' ',ae.last_name), NULLIF(au.username,''), au.email) AS assignee_label
+      FROM tickets t
+      LEFT JOIN employees ae ON ae.id = t.assigned_to
+      LEFT JOIN employees e ON e.user_id = t.raised_by
+      LEFT JOIN users au ON au.id = ae.user_id
+      WHERE t.client_id=? and t.status != 'discarded'
+      ORDER BY t.id DESC
+      LIMIT 200;`,
+      [clientId]
+    );
+
+    // AND t.status IN ('open','in_progress')
+    tickets.forEach((t) => {
+      t.due_label = formatDue(t);
+    });
+
+    // Totals with new status categories
+    const [[totals]] = await pool.query(
+      `SELECT COUNT(*) AS total_tickets,
+        SUM(CASE WHEN status='open' THEN 1 ELSE 0 END) AS open,
+        SUM(CASE WHEN status='unassigned' THEN 1 ELSE 0 END) AS unassigned,
+        SUM(CASE WHEN status='in_progress' THEN 1 ELSE 0 END) AS in_progress,
+        SUM(CASE WHEN status='closed' THEN 1 ELSE 0 END) AS closed,
+        SUM(CASE WHEN status='expired' THEN 1 ELSE 0 END) AS expired
+       FROM tickets WHERE client_id=?`,
+      [clientId]
+    );
+
+    // Employees
+    const [employees] = await pool.query(
+      `SELECT e.id, e.first_name, e.last_name, e.position, e.manager_id,
+              u.role, u.username, u.email
+        FROM employees e
+        JOIN users u ON u.id = e.user_id
+        WHERE e.employment_type = 'client'
+        and e.user_id <> ?
+        and u.client_id = ?
+        ORDER BY u.username ASC`,
+      [req.user.id, clientId]
+    );
+
+    res.render("clientmanager/dashboard", {
+      title: "Client Manager Dashboard",
+      user: req.user, totals, tickets, employees
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
 }
 
 // ---------- Data: internal assignees (employees.id) ----------
@@ -72,15 +142,16 @@ async function listTickets(req, res) {
   const clientId = req.user.client_id;
   try {
     const [rows] = await pool.query(
-      `SELECT t.id, t.subject, t.status, t.priority, t.created_at, t.due_at,
-              t.assigned_to,
-              COALESCE(CONCAT(e.first_name,' ',e.last_name), NULLIF(u.username,''), u.email) AS assignee_label
-         FROM tickets t
-    LEFT JOIN employees e ON e.id = t.assigned_to
-    LEFT JOIN users u ON u.id = e.user_id
-        WHERE t.client_id=?
-        ORDER BY t.id DESC
-        LIMIT 200`,
+      `SELECT 
+        t.id, t.subject, t.status, t.priority, e.first_name as raised_by, t.created_at, t.due_at, t.assigned_to,
+        COALESCE(CONCAT(ae.first_name,' ',ae.last_name), NULLIF(au.username,''), au.email) AS assignee_label
+      FROM tickets t
+      LEFT JOIN employees ae ON ae.id = t.assigned_to
+      LEFT JOIN employees e ON e.user_id = t.raised_by
+      LEFT JOIN users au ON au.id = ae.user_id
+      WHERE t.client_id=? and t.status != 'discarded'
+      ORDER BY t.id DESC
+      LIMIT 200;`,
       [clientId]
     );
     res.json({ success: true, tickets: rows });
@@ -302,6 +373,16 @@ async function ticketPage(req, res) {
     );
     if (!t) return res.status(404).send("Ticket not found");
 
+    // 🔹 Fetch employees (for assigning tickets)
+    const [employees] = await pool.query(
+      `SELECT e.id, e.first_name, e.last_name, e.position,
+              u.role, u.username, u.email
+         FROM employees e
+    LEFT JOIN users u ON u.id = e.user_id
+        WHERE u.client_id=? AND e.employment_type = 'internal'`,
+      [clientId]
+    );
+
     const [attachmentsRaw] = await pool.query(
       `SELECT ta.id, ta.file_path, ta.uploaded_at, ta.uploaded_by,
               COALESCE(CONCAT(ue.first_name,' ',ue.last_name), NULLIF(uu.username,''), uu.email) AS uploader_label
@@ -312,7 +393,8 @@ async function ticketPage(req, res) {
         ORDER BY ta.id DESC`,
       [ticketId]
     );
-    const imageExt = new Set([".jpg",".jpeg",".png",".gif",".webp",".svg"]);
+
+    const imageExt = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"]);
     const attachments = (attachmentsRaw || []).map(a => {
       const ext = path.extname(a.file_path || "").toLowerCase();
       return { ...a, is_image: imageExt.has(ext) };
@@ -333,6 +415,7 @@ async function ticketPage(req, res) {
       title: `Ticket #${t.id}`,
       user: req.user,
       ticket: t,
+      employees,   // ✅ now passed to template
       attachments,
       comments,
     });
@@ -392,17 +475,17 @@ async function updateTicketComment(req, res) {
   const ticketId = Number(req.params.id);
   const commentId = Number(req.params.commentId);
   const { content } = req.body || {};
-  if (!content || !content.trim()) return res.status(400).json({ success:false, error:"Content required" });
+  if (!content || !content.trim()) return res.status(400).json({ success: false, error: "Content required" });
 
   const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [ticketId, clientId]);
-  if (!tk) return res.status(404).json({ success:false, error:"Not found" });
+  if (!tk) return res.status(404).json({ success: false, error: "Not found" });
 
   const [[row]] = await pool.query(
     "SELECT id, user_id FROM ticket_comments WHERE id=? AND ticket_id=? LIMIT 1",
     [commentId, ticketId]
   );
-  if (!row) return res.status(404).json({ success:false, error:"Comment not found" });
-  if (row.user_id !== req.user.id) return res.status(403).json({ success:false, error:"You can edit only your own comment" });
+  if (!row) return res.status(404).json({ success: false, error: "Comment not found" });
+  if (row.user_id !== req.user.id) return res.status(403).json({ success: false, error: "You can edit only your own comment" });
 
   await pool.query("UPDATE ticket_comments SET comment=?, updated_at=NOW() WHERE id=?", [content.trim(), commentId]);
 
@@ -415,7 +498,7 @@ async function updateTicketComment(req, res) {
       WHERE c.id=?`,
     [commentId]
   );
-  res.json({ success:true, comment });
+  res.json({ success: true, comment });
 }
 
 // ---------- Attachments ----------
@@ -423,10 +506,10 @@ async function addTicketAttachments(req, res) {
   const clientId = req.user.client_id;
   const ticketId = Number(req.params.id);
   const [[tk]] = await pool.query("SELECT id FROM tickets WHERE id=? AND client_id=? LIMIT 1", [ticketId, clientId]);
-  if (!tk) return res.status(404).json({ success:false, error: "Ticket not found" });
+  if (!tk) return res.status(404).json({ success: false, error: "Ticket not found" });
 
   const files = (req.files || []);
-  if (!files.length) return res.status(400).json({ success:false, error: "No files uploaded" });
+  if (!files.length) return res.status(400).json({ success: false, error: "No files uploaded" });
 
   const inserted = [];
   for (const f of files) {
@@ -437,7 +520,7 @@ async function addTicketAttachments(req, res) {
     );
     inserted.push({ id: r.insertId, file_path: rel, uploaded_at: new Date(), uploaded_by: req.user.id });
   }
-  res.json({ success:true, attachments: inserted });
+  res.json({ success: true, attachments: inserted });
 }
 
 // ---------- Status update ----------
@@ -457,6 +540,89 @@ async function updateTicketStatus(req, res) {
   res.json({ success: true, status: dbStatus });
 }
 
+async function discardTicket(req, res) {
+  const clientId = req.user.client_id;
+  const ticketId = req.params.id;
+
+  try {
+    const [result] = await pool.query(
+      `UPDATE tickets 
+          SET status='discarded', updated_at=NOW() 
+        WHERE id=? AND client_id=?`,
+      [ticketId, clientId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).send("Ticket not found or unauthorized");
+    }
+
+    // ✅ Redirect to dashboard after success
+    res.redirect("/client-manager");
+  } catch (err) {
+    console.error("discardTicket error:", err);
+    res.status(500).send("Server error");
+  }
+}
+
+async function editTicket(req, res) { //console.log(req.body); return;
+  const clientId = req.user.client_id;
+  const ticketId = req.params.id;
+  const { subject, description, due_option, due_at, assigned_to, priority } = req.body;
+  // console.log(req.body);
+  try {
+    let finalDueAt = null;
+
+    // Compute due_at based on due_option
+    const now = new Date();
+    switch (due_option) {
+      case "today":
+        finalDueAt = new Date();
+        finalDueAt.setHours(23, 59, 59, 0);
+        break;
+
+      case "tomorrow":
+        finalDueAt = new Date();
+        finalDueAt.setDate(now.getDate() + 1);
+        finalDueAt.setHours(23, 59, 59, 0);
+        break;
+
+      case "this_week":
+        finalDueAt = new Date();
+        const dayOfWeek = finalDueAt.getDay(); // 0 = Sunday
+        const daysToSunday = 7 - dayOfWeek;
+        finalDueAt.setDate(now.getDate() + daysToSunday);
+        finalDueAt.setHours(23, 59, 59, 0);
+        break;
+
+      case "next_week":
+        finalDueAt = new Date();
+        const daysToNextSunday = 7 - finalDueAt.getDay() + 7;
+        finalDueAt.setDate(now.getDate() + daysToNextSunday);
+        finalDueAt.setHours(23, 59, 59, 0);
+        break;
+
+      case "custom":
+        finalDueAt = due_at ? new Date(due_at) : null;
+        break;
+
+      default:
+        finalDueAt = null;
+    }
+
+    await pool.query(
+      `UPDATE tickets 
+          SET subject=?, description=?, due_option=?, due_at=?, assigned_to=?, updated_at=NOW(), priority=?
+        WHERE id=? AND client_id=?`,
+      [subject, description, due_option, finalDueAt, assigned_to || null, priority, ticketId, clientId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("editTicket error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
 module.exports = {
   attachmentsMiddleware: attachmentsMiddlewareExports,
   dashboard,
@@ -471,5 +637,7 @@ module.exports = {
   createTicketComment,
   updateTicketComment,   // NEW
   addTicketAttachments,
-  updateTicketStatus     // NEW
+  updateTicketStatus,     // NEW
+  discardTicket,
+  editTicket,
 };

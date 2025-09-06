@@ -24,11 +24,8 @@ router.post("/tickets/:id/attachments",
     ctrl.addTicketAttachments);
 
 // Ticket status update
-router.put(
-    "/tickets/:id/status",
-    requireJWT,
-    requireClientManager,
-    ctrl.updateTicketStatus
-);
+router.put( "/tickets/:id/status", requireJWT, requireClientManager, ctrl.updateTicketStatus);
+router.post("/tickets/:id/edit", requireJWT, requireClientManager, ctrl.editTicket);
+router.post("/tickets/:id/discard", requireJWT, requireClientManager, ctrl.discardTicket);
 
 module.exports = router;

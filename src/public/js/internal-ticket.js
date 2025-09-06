@@ -5,9 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!root) return;
 
   const TICKET_ID = root.dataset.ticketId; // from <div id="ticketPage" data-ticket-id="..." data-user-id="...">
-  const USER_ID   = root.dataset.userId;
+  const USER_ID = root.dataset.userId;
 
-  const q  = (s) => document.querySelector(s);
+  const q = (s) => document.querySelector(s);
 
   // Simple HTML escape (defensive)
   const esc = (s) =>
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const wrap = document.createElement("div");
     wrap.className = "mb-3 border-bottom pb-2";
     wrap.dataset.commentId = c.id;
-    wrap.dataset.authorId  = c.author_id;
+    wrap.dataset.authorId = c.author_id;
     wrap.innerHTML = `
       <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== Add attachments (modal form) =====
   const form = document.getElementById("addAttachmentsForm");
-  const msg  = document.getElementById("addAttMsg");
+  const msg = document.getElementById("addAttMsg");
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -142,11 +142,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="d-flex justify-content-between align-items-center mb-2">
               <div class="small text-muted">Uploaded just now</div>
             </div>
-            ${
-              isImg
-                ? `<a href="/attachments/${a.id}" target="_blank" class="d-block"><img src="/attachments/${a.id}" class="img-fluid rounded" alt=""></a>`
-                : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`
-            }
+            ${isImg
+            ? `<a href="/attachments/${a.id}" target="_blank" class="d-block"><img src="/attachments/${a.id}" class="img-fluid rounded" alt=""></a>`
+            : `<a href="/attachments/${a.id}" target="_blank">${fileName}</a>`
+          }
           </div>`;
         // remove "No attachments" placeholder
         if (grid && grid.previousElementSibling?.classList.contains("text-muted")) {
@@ -165,33 +164,75 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===== Delete attachment (author-only; server enforces as well) =====
-document.getElementById("attachmentGrid")?.addEventListener("click", async (e) => {
-  const btn = e.target.closest(".delete-attachment");
-  if (!btn) return;
-  const id = btn.dataset.id;
-  if (!id) return;
-  if (!confirm("Delete this attachment?")) return;
+  document.getElementById("attachmentGrid")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".delete-attachment");
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    if (!confirm("Delete this attachment?")) return;
 
-  try {
-    const res = await fetch(`/attachments/${id}`, { method: "DELETE", headers: { "Accept": "application/json" } });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
+    try {
+      const res = await fetch(`/attachments/${id}`, { method: "DELETE", headers: { "Accept": "application/json" } });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || j.success === false) throw new Error(j.error || "Delete failed");
 
-    // Remove from DOM
-    const item = btn.closest(".attachment-item");
-    const grid = document.getElementById("attachmentGrid");
-    item?.remove();
+      // Remove from DOM
+      const item = btn.closest(".attachment-item");
+      const grid = document.getElementById("attachmentGrid");
+      item?.remove();
 
-    // If none left, show placeholder
-    if (grid && !grid.querySelector(".attachment-item")) {
-      const empty = document.createElement("div");
-      empty.className = "text-muted";
-      empty.textContent = "No attachments.";
-      grid.parentElement?.appendChild(empty);
+      // If none left, show placeholder
+      if (grid && !grid.querySelector(".attachment-item")) {
+        const empty = document.createElement("div");
+        empty.className = "text-muted";
+        empty.textContent = "No attachments.";
+        grid.parentElement?.appendChild(empty);
+      }
+    } catch (err) {
+      alert(err.message || "Delete failed");
     }
-  } catch (err) {
-    alert(err.message || "Delete failed");
-  }
-});
+  });
+
+  document.getElementById("applyAssign").addEventListener("click", async function () {
+    const form = document.getElementById("assignForm");
+    const ticketId = form.dataset.ticketId;
+    const select = document.getElementById("assignedTo");
+    const employeeId = select.value || null;
+    const employeeLabel = select.options[select.selectedIndex].text;
+
+    if (!employeeId) {
+      alert("Please select an employee before assigning.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to assign this ticket to "${employeeLabel}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/internal/tickets/${ticketId}/assign`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employee_id: employeeId })   // ✅ matches controller
+      });
+
+      if (res.ok) {
+        // Update inline without reloading
+        const btn = document.getElementById("applyAssign");
+        btn.textContent = "Assigned";
+        btn.disabled = true;
+        btn.classList.remove("btn-outline-primary");
+        btn.classList.add("btn-success");
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to assign ticket");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  });
 
 });

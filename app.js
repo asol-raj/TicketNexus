@@ -4,6 +4,7 @@ const expressLayouts = require("express-ejs-layouts");
 const session = require("express-session");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const methodOverride = require('method-override');
 const path = require("path");
 const ejs = require("ejs");
 const { passport } = require("./src/middlewares/jwtAuth");
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
+app.use(methodOverride('_method'));
 app.use("/attachments", require("./src/router/attachments"));
 
 // Sessions (for SUPER ADMIN only routes we build)

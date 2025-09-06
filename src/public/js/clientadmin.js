@@ -51,6 +51,10 @@ function renderTicketsTable(tickets) {
             : "bg-info text-dark"
       } text-uppercase">${t.priority || "-"}</span>
       </td>
+      <td>${t.raised_by}</td>
+      <td>${t.assignee_label || "Unassigned"}</td>
+      <td>${t.created_at ? new Date(t.created_at).toLocaleString() : "-"}</td>
+      <td>${t.due_at ? new Date(t.due_at).toLocaleString() : "-"}</td>
       <td>
         <span class="badge ${t.status === "open"
         ? "bg-primary"
@@ -60,10 +64,7 @@ function renderTicketsTable(tickets) {
             ? "bg-success"
             : "bg-secondary"
       } text-uppercase">${t.status || "-"}</span>
-      </td>
-      <td>${t.assignee_label || "Unassigned"}</td>
-      <td>${t.created_at ? new Date(t.created_at).toLocaleString() : "-"}</td>
-      <td>${t.due_label || (t.due_at ? new Date(t.due_at).toLocaleString() : "-")}</td>
+      </td>      
     `;
     tb.appendChild(tr);
   }
@@ -113,7 +114,6 @@ async function refreshTickets(filter = "open") {
     if (filter === "closed") rows = rows.filter(x => x.status === "closed");
     renderTicketsTable(rows);
     renderRecentList(data.tickets || []);
-
   } catch { }
 }
 
@@ -141,6 +141,7 @@ async function populateAssignees() {
     }
   } catch { }
 }
+
 function bindNewTicketForm() {
   const form = document.getElementById("newTicketForm");
   const msg = document.getElementById("ticketMsg");
@@ -335,7 +336,6 @@ function bindEditEmployee() {
   });
 }
 
-
 // document.addEventListener("DOMContentLoaded", () => {
 //   document.querySelectorAll(".edit-employee-btn").forEach(btn => {
 //     btn.addEventListener("click", () => {
@@ -415,8 +415,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-
 
 // boot
 document.addEventListener("DOMContentLoaded", () => {

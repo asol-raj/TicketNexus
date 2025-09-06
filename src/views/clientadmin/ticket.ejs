@@ -4,17 +4,27 @@
       <h3>Ticket #
         <?= ticket.id ?> -
         <?= ticket.subject ?>
-      </h3>
-
+      </h3>      
       <div>
         <? if (ticket.status !=='discarded' ) { ?>
         <form action="/client-admin/tickets/<?= ticket.id ?>/discard" method="POST" class="d-inline"
-          onsubmit="return confirm('Discard this ticket?')">
-          <button type="submit" class="btn btn-danger btn-sm">Discard</button>
+            onsubmit="return confirm('Discard this ticket?')">
+            <button type="submit" class="btn btn-danger btn-sm"
+            <? if (ticket.raised_by !== user.id) { ?>
+              disabled title="Not allowed"
+            <? } ?>
+            data-bs-toggle="modal"
+            data-bs-target="#editTicketModal">
+            Discard
+          </button>
         </form>
 
         <!-- Edit Ticket Button -->
-        <button type="button" class="btn btn-warning btn-sm ms-2" data-bs-toggle="modal"
+        <button type="button" class="btn btn-warning btn-sm ms-2"
+          <? if (ticket.raised_by !== user.id) { ?>
+            disabled title="Not allowed"
+          <? } ?>
+          data-bs-toggle="modal"
           data-bs-target="#editTicketModal">
           Edit
         </button>
@@ -241,10 +251,6 @@
     </form>
   </div>
 </div>
-
-
-
-
 
 <!-- Add Attachments Modal -->
 <div class="modal fade" id="addAttachmentsModal" tabindex="-1" aria-hidden="true">

@@ -119,13 +119,16 @@ async function dashboard(req, res) {
 
     // Tickets list (only open + in_progress for dashboard table)
     const [tickets] = await pool.query(
-      `SELECT t.*, 
-              COALESCE(CONCAT(e.first_name,' ',e.last_name), u.username, u.email) AS assignee_label
-         FROM tickets t
-    LEFT JOIN employees e ON e.id = t.assigned_to
-    LEFT JOIN users u ON u.id = e.user_id
-        WHERE t.client_id=? AND t.status != 'archived'          
-     ORDER BY t.created_at DESC LIMIT 50`,
+      `SELECT 
+        t.id, t.subject, t.status, t.priority, e.first_name as raised_by, t.created_at, t.due_at, t.assigned_to,
+        COALESCE(CONCAT(ae.first_name,' ',ae.last_name), NULLIF(au.username,''), au.email) AS assignee_label
+      FROM tickets t
+      LEFT JOIN employees ae ON ae.id = t.assigned_to
+      LEFT JOIN employees e ON e.user_id = t.raised_by
+      LEFT JOIN users au ON au.id = ae.user_id
+      WHERE t.client_id=? and t.status != 'discarded'
+      ORDER BY t.id DESC
+      LIMIT 200;`,
       [clientId]
     );
 
@@ -211,16 +214,16 @@ async function listTickets(req, res) {
   const clientId = u.client_id;
   try {
     const [rows] = await pool.query(
-      `SELECT t.id, t.subject, t.status, t.priority, t.created_at, t.due_at,
-              t.assigned_to,
-              COALESCE(CONCAT(ae.first_name,' ',ae.last_name),
-                       NULLIF(au.username,''), au.email) AS assignee_label
-         FROM tickets t
-    LEFT JOIN employees ae ON ae.id = t.assigned_to
-    LEFT JOIN users au ON au.id = ae.user_id
-        WHERE t.client_id=? and t.status != 'discarded'
-        ORDER BY t.id DESC
-        LIMIT 200`,
+      `SELECT 
+        t.id, t.subject, t.status, t.priority, e.first_name as raised_by, t.created_at, t.due_at, t.assigned_to,
+        COALESCE(CONCAT(ae.first_name,' ',ae.last_name), NULLIF(au.username,''), au.email) AS assignee_label
+      FROM tickets t
+      LEFT JOIN employees ae ON ae.id = t.assigned_to
+      LEFT JOIN employees e ON e.user_id = t.raised_by
+      LEFT JOIN users au ON au.id = ae.user_id
+      WHERE t.client_id=? and t.status != 'discarded'
+      ORDER BY t.id DESC
+      LIMIT 200;`,
       [clientId]
     );
     res.json({ success: true, tickets: rows });
@@ -658,7 +661,6 @@ async function ticketPage(req, res) {
   }
 }
 
-
 // ---------- Ticket comments ----------
 async function listTicketComments(req, res) {
   const u = req.user;
@@ -774,6 +776,7 @@ async function createEmployeeRow({ user_id, first_name = null, last_name = null,
     [user_id, first_name, last_name, position, manager_employee_id]
   );
 }
+
 async function createEmployee(req, res) {
   const u = req.user;
   const clientId = u.client_id;
@@ -797,8 +800,6 @@ async function createEmployee(req, res) {
     res.status(500).json({ error: "Server error" });
   }
 }
-
-
 
 // POST /client-admin/tickets/:id/attachments
 async function addTicketAttachments(req, res) {

@@ -13,6 +13,24 @@
       else if (ticket.status === "closed") badgeClass = "bg-dark";
     ?>
     <div class="d-flex align-items-center gap-2">
+      <form class="mb-0 d-flex gap-2 align-items-center me-5" id="assignForm" data-ticket-id="<?= ticket.id ?>">
+        <label class="form-label mb-0">Assign_To</label>
+        <select class="form-select form-select-sm" name="employee_id" id="assignedTo">
+          <? if (employees?.length) { ?>
+            <option value="">Unassigned</option>
+            <? employees.forEach(e => { ?>
+              <option value="<?= e.employee_id ?>" <?= ticket.assigned_to == e.employee_id ? "selected" : "" ?>>
+                <?= e.label ?>
+              </option>
+            <? }) ?>
+          <? } ?>
+        </select>
+
+        <button type="button" class="btn btn-sm btn-outline-primary" id="applyAssign">
+          Assign
+        </button>
+      </form>
+
       <span class="badge <?= badgeClass ?> text-uppercase" id="statusBadge">
         <?= ticket.status ?>
       </span>
@@ -25,7 +43,7 @@
       <button class="btn btn-sm btn-outline-primary" id="applyStatus">Update</button>
     </div>
   </div>
-  
+
   <div class="row g-3">
     <div class="col-12 col-lg-8">
       <div class="card shadow-sm mb-3">

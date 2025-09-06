@@ -25,7 +25,7 @@
             <button class="btn btn-outline-secondary" id="fltInProg">In Progress</button>
             <button class="btn btn-outline-secondary" id="fltResolved">Resolved</button>
             <button class="btn btn-outline-secondary" id="fltClosed">Closed</button>
-            <!-- <button class="btn btn-outline-secondary" id="fltArchived">Archived</button> -->
+            <button class="btn btn-outline-secondary" id="fltArchived">Archived</button>
             <!-- <button class="btn btn-outline-secondary" id="fltAll">All</button> -->
           </div>
         </div>
@@ -36,10 +36,11 @@
                 <th>ID</th>
                 <th>Subject</th>
                 <th>Priority</th>
-                <th>Status</th>
+                <th>Raised_by</th>
                 <th>Assignee</th>
                 <th>Created</th>
                 <th>Due</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody><!-- filled by JS --></tbody>
@@ -374,11 +375,11 @@
         <div class="vstack gap-2">
           <div class="row g-2">
             <div class="col-8">
-              <label class="form-label">Subject</label>
-              <input class="form-control" name="subject" required>
+              <!-- <label class="form-label">Subject</label> -->
+              <input class="form-control" name="subject" placeholder="Subject" required>
             </div>
             <div class="col-4">
-              <label class="form-label">Priority</label>
+              <!-- <label class="form-label">Priority</label> -->
               <select class="form-select" name="priority">
                 <option value="low">Low</option>
                 <option value="medium" selected>Medium</option>

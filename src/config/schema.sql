@@ -70,6 +70,33 @@ CREATE TABLE `employees` (
     FOREIGN KEY (`manager_id`) REFERENCES `employees`(`id`) ON DELETE SET NULL
 );
 
+DESC employees;
+SHOW CREATE TABLE employees;
+
+-- CREATE TABLE `employees` (
+--   `id` int NOT NULL AUTO_INCREMENT,
+--   `user_id` int NOT NULL,
+--   `first_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+--   `last_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+--   `position` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+--   `manager_id` int DEFAULT NULL,
+--   `date_of_joining` date DEFAULT NULL,
+--   `employment_type` enum('internal','client') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'internal',
+--   PRIMARY KEY (`id`),
+--   KEY `user_id` (`user_id`),
+--   KEY `manager_id` (`manager_id`),
+--   CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+--   CONSTRAINT `employees_ibfk_2` FOREIGN KEY (`manager_id`) REFERENCES `employees` (`id`) ON DELETE SET NULL
+-- ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+
+CREATE TABLE `employee_managers` (
+    `emp_id` INT NOT NULL,
+    `manager_id` INT NOT NULL,
+    PRIMARY KEY (`emp_id`, `manager_id`),
+    FOREIGN KEY (`emp_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`manager_id`) REFERENCES `employees`(`id`) ON DELETE CASCADE
+);
+
 SELECT * FROM employees;
 
 ALTER TABLE `employees`

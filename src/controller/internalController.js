@@ -426,8 +426,9 @@ async function assignTicket(req, res) {
   const clientId = u.client_id;
   const { id } = req.params;                  // ticket id
   const { employee_id } = req.body || {};     // employees.id
+  const empId = employee_id || null;  // allow null
 
-  if (!employee_id) return res.status(400).json({ error: "employee_id is required" });
+  // if (!employee_id) return res.status(400).json({ error: "employee_id is required" });
 
   try {
     // Verify ticket belongs to this client
@@ -444,14 +445,14 @@ async function assignTicket(req, res) {
       `SELECT e.id
          FROM employees e
          JOIN users u ON u.id = e.user_id
-        WHERE e.id=? AND u.client_id=? AND u.role='employee' AND employment_type = 'internal'
+        WHERE e.id=? AND u.client_id=? AND employment_type = 'internal'
         LIMIT 1`,
-      [employee_id, clientId]
+      [empId, clientId]
     );
     if (!emp) return res.status(400).json({ error: "Invalid employee for this client" });
 
     // Update assignment
-    await pool.query(`UPDATE tickets SET assigned_to=? WHERE id=?`, [employee_id, id]);
+    await pool.query(`UPDATE tickets SET assigned_to=? WHERE id=?`, [empId, id]);
 
     // Optionally insert into ticket_assignments history table here
 
@@ -578,6 +579,8 @@ async function listManagers(req, res) {
 
 /** Render ticket detail page */
 async function ticketPage(req, res) {
+  const u = req.user;
+  const clientId = u.client_id;
   const { id } = req.params;
   try {
     const [[t]] = await pool.query(
@@ -624,11 +627,23 @@ async function ticketPage(req, res) {
       [id]
     );
 
+    const [employees] = await pool.query(
+      `SELECT e.id AS employee_id,
+              COALESCE(CONCAT(e.first_name,' ',e.last_name),
+                       NULLIF(u.username,''), u.email) AS label
+         FROM employees e
+         JOIN users u ON u.id = e.user_id
+        WHERE u.client_id = ? AND e.employment_type = 'internal'
+        ORDER BY label ASC`,
+      [clientId]
+    );
+
     res.render("internal/ticket", {
       title: `Ticket #${t.id}`,
       user: req.user,
       ticket: t,
       attachments,
+      employees,
       comments
     });
   } catch (e) {

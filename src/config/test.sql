@@ -83,3 +83,25 @@ UPDATE users SET role = 'manager' WHERE id = 16;
 SELECT * FROM employees ORDER BY id DESC;
 UPDATE employees SET manager_id = NULL WHERE id = 15;
 UPDATE employees SET position = 'Manager' WHERE id = 15;
+
+
+
+SELECT * FROM tickets order by id desc;
+
+SELECT * FROM users;
+select * from employees;
+
+SELECT t.*, 
+              COALESCE(CONCAT(e.first_name,' ',e.last_name), u.username, u.email) AS assignee_label
+         FROM tickets t
+    LEFT JOIN employees e ON e.id = t.assigned_to
+    LEFT JOIN users u ON u.id = e.user_id
+        WHERE t.client_id=1 AND t.status != 'archived'          
+     ORDER BY t.created_at DESC LIMIT 100;
+
+
+SELECT e.id
+         FROM `employees` e
+         JOIN `users` u ON u.id = e.user_id
+        WHERE e.id=2 AND u.client_id=1 AND u.role='employee' AND employment_type = 'internal'
+        LIMIT 1
